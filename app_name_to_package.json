@@ -1,0 +1,963 @@
+{
+  "version": 1,
+  "generated_at": "2026-05-26T17:01:06.0201695+08:00",
+  "entries": [
+    {
+      "package_id": "com.tencent.mm",
+      "aliases": [
+        "微信",
+        "wechat"
+      ]
+    },
+    {
+      "package_id": "com.teslamotors.tesla",
+      "aliases": [
+        "特斯拉",
+        "tesla"
+      ]
+    },
+    {
+      "package_id": "com.tencent.mobileqq",
+      "aliases": [
+        "qq",
+        "腾讯qq"
+      ]
+    },
+    {
+      "package_id": "com.sina.weibo",
+      "aliases": [
+        "微博"
+      ]
+    },
+    {
+      "package_id": "com.taobao.taobao",
+      "aliases": [
+        "淘宝"
+      ]
+    },
+    {
+      "package_id": "com.jingdong.app.mall",
+      "aliases": [
+        "京东",
+        "京东秒送"
+      ]
+    },
+    {
+      "package_id": "com.xunmeng.pinduoduo",
+      "aliases": [
+        "拼多多"
+      ]
+    },
+    {
+      "package_id": "com.xingin.xhs",
+      "aliases": [
+        "小红书"
+      ]
+    },
+    {
+      "package_id": "com.douban.frodo",
+      "aliases": [
+        "豆瓣"
+      ]
+    },
+    {
+      "package_id": "com.zhihu.android",
+      "aliases": [
+        "知乎"
+      ]
+    },
+    {
+      "package_id": "com.autonavi.minimap",
+      "aliases": [
+        "高德地图",
+        "高德"
+      ]
+    },
+    {
+      "package_id": "com.baidu.BaiduMap",
+      "aliases": [
+        "百度地图"
+      ]
+    },
+    {
+      "package_id": "com.sankuai.meituan.takeoutnew",
+      "aliases": [
+        "美团外卖"
+      ]
+    },
+    {
+      "package_id": "com.sankuai.meituan",
+      "aliases": [
+        "美团",
+        "美团外卖"
+      ]
+    },
+    {
+      "package_id": "com.dianping.v1",
+      "aliases": [
+        "大众点评",
+        "点评"
+      ]
+    },
+    {
+      "package_id": "me.ele",
+      "aliases": [
+        "饿了么",
+        "淘宝闪购"
+      ]
+    },
+    {
+      "package_id": "com.yek.android.kfc.activitys",
+      "aliases": [
+        "肯德基"
+      ]
+    },
+    {
+      "package_id": "ctrip.android.view",
+      "aliases": [
+        "携程",
+        "携程旅行"
+      ]
+    },
+    {
+      "package_id": "com.MobileTicket",
+      "aliases": [
+        "铁路12306",
+        "12306"
+      ]
+    },
+    {
+      "package_id": "com.Qunar",
+      "aliases": [
+        "去哪儿旅行",
+        "去哪儿网",
+        "去哪儿"
+      ]
+    },
+    {
+      "package_id": "com.sdu.didi.psnger",
+      "aliases": [
+        "滴滴出行",
+        "滴滴"
+      ]
+    },
+    {
+      "package_id": "tv.danmaku.bili",
+      "aliases": [
+        "bilibili",
+        "b站",
+        "哔哩哔哩",
+        "哔站",
+        "bili"
+      ]
+    },
+    {
+      "package_id": "com.ss.android.ugc.aweme",
+      "aliases": [
+        "抖音"
+      ]
+    },
+    {
+      "package_id": "com.smile.gifmaker",
+      "aliases": [
+        "快手"
+      ]
+    },
+    {
+      "package_id": "com.tencent.qqlive",
+      "aliases": [
+        "腾讯视频"
+      ]
+    },
+    {
+      "package_id": "com.qiyi.video",
+      "aliases": [
+        "爱奇艺"
+      ]
+    },
+    {
+      "package_id": "com.youku.phone",
+      "aliases": [
+        "优酷",
+        "优酷视频"
+      ]
+    },
+    {
+      "package_id": "com.hunantv.imgo.activity",
+      "aliases": [
+        "芒果tv",
+        "芒果"
+      ]
+    },
+    {
+      "package_id": "com.phoenix.read",
+      "aliases": [
+        "红果短剧",
+        "红果"
+      ]
+    },
+    {
+      "package_id": "com.netease.cloudmusic",
+      "aliases": [
+        "网易云音乐",
+        "网易云"
+      ]
+    },
+    {
+      "package_id": "com.tencent.qqmusic",
+      "aliases": [
+        "qq音乐"
+      ]
+    },
+    {
+      "package_id": "com.luna.music",
+      "aliases": [
+        "汽水音乐"
+      ]
+    },
+    {
+      "package_id": "com.ximalaya.ting.android",
+      "aliases": [
+        "喜马拉雅"
+      ]
+    },
+    {
+      "package_id": "com.dragon.read",
+      "aliases": [
+        "番茄免费小说",
+        "番茄小说"
+      ]
+    },
+    {
+      "package_id": "com.kmxs.reader",
+      "aliases": [
+        "七猫免费小说"
+      ]
+    },
+    {
+      "package_id": "com.ss.android.lark",
+      "aliases": [
+        "飞书"
+      ]
+    },
+    {
+      "package_id": "com.tencent.androidqqmail",
+      "aliases": [
+        "qq邮箱"
+      ]
+    },
+    {
+      "package_id": "com.larus.nova",
+      "aliases": [
+        "豆包",
+        "豆包"
+      ]
+    },
+    {
+      "package_id": "com.gotokeep.keep",
+      "aliases": [
+        "keep"
+      ]
+    },
+    {
+      "package_id": "com.lingan.seeyou",
+      "aliases": [
+        "美柚"
+      ]
+    },
+    {
+      "package_id": "com.tencent.news",
+      "aliases": [
+        "腾讯新闻"
+      ]
+    },
+    {
+      "package_id": "com.ss.android.article.news",
+      "aliases": [
+        "今日头条"
+      ]
+    },
+    {
+      "package_id": "com.lianjia.beike",
+      "aliases": [
+        "贝壳找房"
+      ]
+    },
+    {
+      "package_id": "com.anjuke.android.app",
+      "aliases": [
+        "安居客"
+      ]
+    },
+    {
+      "package_id": "com.hexin.plat.android",
+      "aliases": [
+        "同花顺"
+      ]
+    },
+    {
+      "package_id": "com.miHoYo.hkrpg",
+      "aliases": [
+        "星穹铁道",
+        "崩坏"
+      ]
+    },
+    {
+      "package_id": "com.papegames.lysk.cn",
+      "aliases": [
+        "恋与深空"
+      ]
+    },
+    {
+      "package_id": "com.android.settings",
+      "aliases": [
+        "settings",
+        "androidsystemsettings"
+      ]
+    },
+    {
+      "package_id": "com.android.soundrecorder",
+      "aliases": [
+        "audiorecorder"
+      ]
+    },
+    {
+      "package_id": "com.rammigsoftware.bluecoins",
+      "aliases": [
+        "bluecoins"
+      ]
+    },
+    {
+      "package_id": "com.flauschcode.broccoli",
+      "aliases": [
+        "broccoli"
+      ]
+    },
+    {
+      "package_id": "com.booking",
+      "aliases": [
+        "booking"
+      ]
+    },
+    {
+      "package_id": "com.android.chrome",
+      "aliases": [
+        "谷歌浏览器",
+        "googlechrome",
+        "chrome"
+      ]
+    },
+    {
+      "package_id": "com.android.deskclock",
+      "aliases": [
+        "时钟",
+        "闹钟",
+        "clock"
+      ]
+    },
+    {
+      "package_id": "com.android.contacts",
+      "aliases": [
+        "contacts"
+      ]
+    },
+    {
+      "package_id": "com.duolingo",
+      "aliases": [
+        "duolingo",
+        "多邻国"
+      ]
+    },
+    {
+      "package_id": "com.expedia.bookings",
+      "aliases": [
+        "expedia"
+      ]
+    },
+    {
+      "package_id": "com.android.fileexplorer",
+      "aliases": [
+        "files",
+        "filemanager"
+      ]
+    },
+    {
+      "package_id": "com.google.android.gm",
+      "aliases": [
+        "gmail",
+        "googlemail"
+      ]
+    },
+    {
+      "package_id": "com.google.android.apps.nbu.files",
+      "aliases": [
+        "googlefiles",
+        "filesbygoogle"
+      ]
+    },
+    {
+      "package_id": "com.google.android.calendar",
+      "aliases": [
+        "googlecalendar"
+      ]
+    },
+    {
+      "package_id": "com.google.android.apps.dynamite",
+      "aliases": [
+        "googlechat"
+      ]
+    },
+    {
+      "package_id": "com.google.android.deskclock",
+      "aliases": [
+        "googleclock"
+      ]
+    },
+    {
+      "package_id": "com.google.android.contacts",
+      "aliases": [
+        "googlecontacts"
+      ]
+    },
+    {
+      "package_id": "com.google.android.apps.docs.editors.docs",
+      "aliases": [
+        "googledocs"
+      ]
+    },
+    {
+      "package_id": "com.google.android.apps.docs",
+      "aliases": [
+        "googledrive"
+      ]
+    },
+    {
+      "package_id": "com.google.android.apps.fitness",
+      "aliases": [
+        "googlefit"
+      ]
+    },
+    {
+      "package_id": "com.google.android.keep",
+      "aliases": [
+        "googlekeep"
+      ]
+    },
+    {
+      "package_id": "com.google.android.apps.maps",
+      "aliases": [
+        "googlemaps"
+      ]
+    },
+    {
+      "package_id": "com.google.android.apps.books",
+      "aliases": [
+        "googleplaybooks"
+      ]
+    },
+    {
+      "package_id": "com.android.vending",
+      "aliases": [
+        "googleplaystore"
+      ]
+    },
+    {
+      "package_id": "com.google.android.apps.docs.editors.slides",
+      "aliases": [
+        "googleslides"
+      ]
+    },
+    {
+      "package_id": "com.google.android.apps.tasks",
+      "aliases": [
+        "googletasks"
+      ]
+    },
+    {
+      "package_id": "net.cozic.joplin",
+      "aliases": [
+        "joplin"
+      ]
+    },
+    {
+      "package_id": "com.mcdonalds.app",
+      "aliases": [
+        "麦当劳",
+        "mcdonald"
+      ]
+    },
+    {
+      "package_id": "net.osmand",
+      "aliases": [
+        "osmand"
+      ]
+    },
+    {
+      "package_id": "com.Project100Pi.themusicplayer",
+      "aliases": [
+        "pimusicplayer"
+      ]
+    },
+    {
+      "package_id": "com.quora.android",
+      "aliases": [
+        "quora"
+      ]
+    },
+    {
+      "package_id": "com.reddit.frontpage",
+      "aliases": [
+        "reddit"
+      ]
+    },
+    {
+      "package_id": "code.name.monkey.retromusic",
+      "aliases": [
+        "retromusic"
+      ]
+    },
+    {
+      "package_id": "com.scientificcalculatorplus.simplecalculator.basiccalculator.mathcalc",
+      "aliases": [
+        "simplecalendarpro"
+      ]
+    },
+    {
+      "package_id": "com.simplemobiletools.smsmessenger",
+      "aliases": [
+        "simplesmsmessenger"
+      ]
+    },
+    {
+      "package_id": "org.telegram.messenger",
+      "aliases": [
+        "telegram"
+      ]
+    },
+    {
+      "package_id": "com.einnovation.temu",
+      "aliases": [
+        "temu"
+      ]
+    },
+    {
+      "package_id": "com.zhiliaoapp.musically",
+      "aliases": [
+        "tiktok"
+      ]
+    },
+    {
+      "package_id": "com.twitter.android",
+      "aliases": [
+        "twitter",
+        "x"
+      ]
+    },
+    {
+      "package_id": "org.videolan.vlc",
+      "aliases": [
+        "vlc"
+      ]
+    },
+    {
+      "package_id": "com.whatsapp",
+      "aliases": [
+        "whatsapp"
+      ]
+    },
+    {
+      "package_id": "com.taobao.movie.android",
+      "aliases": [
+        "淘票票"
+      ]
+    },
+    {
+      "package_id": "com.tongcheng.android",
+      "aliases": [
+        "同程旅行",
+        "同程"
+      ]
+    },
+    {
+      "package_id": "com.sankuai.movie",
+      "aliases": [
+        "猫眼"
+      ]
+    },
+    {
+      "package_id": "com.wuba.zhuanzhuan",
+      "aliases": [
+        "转转"
+      ]
+    },
+    {
+      "package_id": "com.tencent.weread",
+      "aliases": [
+        "微信读书"
+      ]
+    },
+    {
+      "package_id": "com.taobao.idlefish",
+      "aliases": [
+        "闲鱼"
+      ]
+    },
+    {
+      "package_id": "com.wudaokou.hippo",
+      "aliases": [
+        "盒马"
+      ]
+    },
+    {
+      "package_id": "com.eg.android.AlipayGphone",
+      "aliases": [
+        "支付宝"
+      ]
+    },
+    {
+      "package_id": "com.jd.jrapp",
+      "aliases": [
+        "京东金融"
+      ]
+    },
+    {
+      "package_id": "com.achievo.vipshop",
+      "aliases": [
+        "唯品会"
+      ]
+    },
+    {
+      "package_id": "com.smzdm.client.android",
+      "aliases": [
+        "什么值得买"
+      ]
+    },
+    {
+      "package_id": "cn.kuwo.player",
+      "aliases": [
+        "酷我音乐"
+      ]
+    },
+    {
+      "package_id": "com.taobao.trip",
+      "aliases": [
+        "飞猪",
+        "飞猪旅行"
+      ]
+    },
+    {
+      "package_id": "com.jingdong.pdj",
+      "aliases": [
+        "京东到家"
+      ]
+    },
+    {
+      "package_id": "com.tencent.map",
+      "aliases": [
+        "腾讯地图"
+      ]
+    },
+    {
+      "package_id": "com.shizhuang.duapp",
+      "aliases": [
+        "得物"
+      ]
+    },
+    {
+      "package_id": "cn.damai",
+      "aliases": [
+        "大麦",
+        "大麦网"
+      ]
+    },
+    {
+      "package_id": "com.ss.android.auto",
+      "aliases": [
+        "懂车帝"
+      ]
+    },
+    {
+      "package_id": "com.cubic.autohome",
+      "aliases": [
+        "汽车之家"
+      ]
+    },
+    {
+      "package_id": "com.wuba",
+      "aliases": [
+        "58同城",
+        "五八同城"
+      ]
+    },
+    {
+      "package_id": "com.android.calendar",
+      "aliases": [
+        "日历"
+      ]
+    },
+    {
+      "package_id": "com.alibaba.android.rimet",
+      "aliases": [
+        "钉钉"
+      ]
+    },
+    {
+      "package_id": "com.meituan.retail.v.android",
+      "aliases": [
+        "小象超市"
+      ]
+    },
+    {
+      "package_id": "com.aliyun.tongyi",
+      "aliases": [
+        "通义",
+        "千问",
+        "通义千问"
+      ]
+    },
+    {
+      "package_id": "com.hupu.games",
+      "aliases": [
+        "虎扑",
+        "虎扑体育"
+      ]
+    },
+    {
+      "package_id": "com.quark.browser",
+      "aliases": [
+        "夸克",
+        "夸克浏览器"
+      ]
+    },
+    {
+      "package_id": "com.yuantiku.tutor",
+      "aliases": [
+        "猿辅导"
+      ]
+    },
+    {
+      "package_id": "com.tencent.mtt",
+      "aliases": [
+        "qq浏览器"
+      ]
+    },
+    {
+      "package_id": "com.umetrip.android.msky.app",
+      "aliases": [
+        "航旅纵横"
+      ]
+    },
+    {
+      "package_id": "com.UCMobile",
+      "aliases": [
+        "UC浏览器"
+      ]
+    },
+    {
+      "package_id": "com.ss.android.ugc.aweme.lite",
+      "aliases": [
+        "抖音极速版",
+        "抖音"
+      ]
+    },
+    {
+      "package_id": "air.tv.douyu.android",
+      "aliases": [
+        "斗鱼"
+      ]
+    },
+    {
+      "package_id": "com.tencent.hunyuan.app.chat",
+      "aliases": [
+        "元宝"
+      ]
+    },
+    {
+      "package_id": "com.baidu.searchbox",
+      "aliases": [
+        "百度"
+      ]
+    },
+    {
+      "package_id": "com.lemon.lv",
+      "aliases": [
+        "剪映"
+      ]
+    },
+    {
+      "package_id": "cn.soulapp.android",
+      "aliases": [
+        "soul"
+      ]
+    },
+    {
+      "package_id": "com.baidu.netdisk",
+      "aliases": [
+        "百度网盘"
+      ]
+    },
+    {
+      "package_id": "com.tmri.app.main",
+      "aliases": [
+        "交管12123",
+        "12123"
+      ]
+    },
+    {
+      "package_id": "com.kugou.android",
+      "aliases": [
+        "酷狗",
+        "酷狗音乐"
+      ]
+    },
+    {
+      "package_id": "com.ss.android.lark",
+      "aliases": [
+        "飞书"
+      ]
+    },
+    {
+      "package_id": "com.tencent.android.qqdownloader",
+      "aliases": [
+        "应用宝"
+      ]
+    },
+    {
+      "package_id": "com.mt.mtxx.mtxx",
+      "aliases": [
+        "美图",
+        "美图秀秀"
+      ]
+    },
+    {
+      "package_id": "com.tencent.karaoke",
+      "aliases": [
+        "全民k歌"
+      ]
+    },
+    {
+      "package_id": "com.intsig.camscanner",
+      "aliases": [
+        "扫描全能王"
+      ]
+    },
+    {
+      "package_id": "com.android.bankabc",
+      "aliases": [
+        "农业银行",
+        "农行"
+      ]
+    },
+    {
+      "package_id": "cmb.pb",
+      "aliases": [
+        "招商银行",
+        "招行"
+      ]
+    },
+    {
+      "package_id": "com.ganji.android.haoche_c",
+      "aliases": [
+        "瓜子二手车",
+        "瓜子"
+      ]
+    },
+    {
+      "package_id": "com.sf.activity",
+      "aliases": [
+        "顺丰",
+        "顺丰快递",
+        "顺丰速运"
+      ]
+    },
+    {
+      "package_id": "com.ziroom.ziroomcustomer",
+      "aliases": [
+        "自如"
+      ]
+    },
+    {
+      "package_id": "com.yumc.phsuperapp",
+      "aliases": [
+        "必胜客"
+      ]
+    },
+    {
+      "package_id": "cn.dominos.pizza",
+      "aliases": [
+        "达美乐披萨",
+        "达美乐"
+      ]
+    },
+    {
+      "package_id": "cn.wps.moffice_eng",
+      "aliases": [
+        "WPS Office",
+        "WPS"
+      ]
+    },
+    {
+      "package_id": "com.mfw.roadbook",
+      "aliases": [
+        "马蜂窝"
+      ]
+    },
+    {
+      "package_id": "com.moonshot.kimichat",
+      "aliases": [
+        "kimi"
+      ]
+    },
+    {
+      "package_id": "com.tencent.wemeet.app",
+      "aliases": [
+        "腾讯会议"
+      ]
+    },
+    {
+      "package_id": "com.deepseek.chat",
+      "aliases": [
+        "deepseek"
+      ]
+    },
+    {
+      "package_id": "com.spdbccc.app",
+      "aliases": [
+        "浦发银行"
+      ]
+    },
+    {
+      "package_id": "cn.samsclub.app",
+      "aliases": [
+        "山姆超市",
+        "山姆",
+        "山姆会员商店",
+        "山姆会员店"
+      ]
+    },
+    {
+      "package_id": "com.tencent.qqsports",
+      "aliases": [
+        "腾讯体育"
+      ]
+    },
+    {
+      "package_id": "com.hanweb.android.zhejiang.activity",
+      "aliases": [
+        "浙里办"
+      ]
+    },
+    {
+      "package_id": "com.ss.android.article.video",
+      "aliases": [
+        "西瓜视频"
+      ]
+    },
+    {
+      "package_id": "com.taou.maimai",
+      "aliases": [
+        "脉脉"
+      ]
+    }
+  ]
+}

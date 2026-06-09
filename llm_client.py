@@ -1,0 +1,360 @@
+"""LLM client and request/response helpers for OpenAI-compatible endpoints."""
+
+import base64
+import json
+import re
+import time
+import uuid
+from datetime import datetime
+from io import BytesIO
+from pathlib import Path
+from typing import Any
+
+import requests
+from PIL import Image, ImageFile
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+DEFAULT_MODEL_CONFIG_PATH = "model_config.json"
+
+
+def _json_safe(value):
+    try:
+        json.dumps(value)
+        return value
+    except TypeError:
+        if isinstance(value, dict):
+            return {str(k): _json_safe(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple, set)):
+            return [_json_safe(v) for v in value]
+        if hasattr(value, "model_dump"):
+            return _json_safe(value.model_dump())
+        if hasattr(value, "dict"):
+            return _json_safe(value.dict())
+        return str(value)
+
+def _try_parse_json(text: str):
+    if not text:
+        return None
+    try:
+        cleaned = text.strip()
+        if "```json" in cleaned:
+            cleaned = cleaned.split("```json", 1)[1].split("```", 1)[0].strip()
+        elif "```" in cleaned:
+            cleaned = cleaned.split("```", 1)[1].split("```", 1)[0].strip()
+        return json.loads(cleaned)
+    except Exception:
+        return None
+
+class LlmTraceLogger:
+    def __init__(self, trace_dir=None):
+        self.trace_dir = Path(trace_dir) if trace_dir else Path.cwd() / "llm_traces"
+        self.trace_dir.mkdir(parents=True, exist_ok=True)
+
+    def log(self, request_payload, response_payload=None, metadata=None, error=None):
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        log_path = self.trace_dir / f"llm_trace_{timestamp}_{uuid.uuid4().hex[:8]}.json"
+        # Try to extract any model 'reasoning' text when present in the response
+        reasoning = None
+        try:
+            if isinstance(response_payload, dict):
+                # OpenAI-like schema: choices -> [ { message: { reasoning: ... } } ]
+                choices = response_payload.get("choices") or []
+                if choices and isinstance(choices, list):
+                    msg = choices[0].get("message") if isinstance(choices[0], dict) else None
+                    if isinstance(msg, dict):
+                        reasoning = msg.get("reasoning") or msg.get("explanation")
+                # Top-level reasoning key
+                if reasoning is None:
+                    reasoning = response_payload.get("reasoning")
+        except Exception:
+            reasoning = None
+
+        record = {
+            "timestamp": datetime.now().isoformat(),
+            "metadata": _json_safe(metadata or {}),
+            "request": _json_safe(request_payload),
+            "response": _json_safe(response_payload),
+            "reasoning": _json_safe(reasoning) if reasoning is not None else None,
+            "error": str(error) if error else None,
+        }
+        with log_path.open("w", encoding="utf-8") as f:
+            json.dump(record, f, ensure_ascii=False, indent=2)
+        return str(log_path)
+
+
+class LLMInvokeError(RuntimeError):
+    """Raised when LLM invocation fails after all retries."""
+
+
+def load_model_config(config_path: str) -> dict[str, Any]:
+    path = Path(config_path)
+    if not path.exists():
+        raise SystemExit(f"Model config file not found: {path}")
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise SystemExit(f"Failed to parse model config JSON at {path}: {exc}")
+
+    if not isinstance(raw, dict):
+        raise SystemExit(f"Model config must be a JSON object: {path}")
+
+    endpoint_url = str(raw["endpoint_url"]).strip()
+    api_key = str(raw["api_key"]).strip()
+    model_name = str(raw["model_name"]).strip()
+    if not endpoint_url:
+        raise SystemExit(f"Missing 'endpoint_url' in model config: {path}")
+    if not api_key:
+        raise SystemExit(f"Missing 'api_key' in model config: {path}")
+    if not model_name:
+        raise SystemExit(f"Missing 'model_name' in model config: {path}")
+
+    return {
+        "endpoint_url": endpoint_url,
+        "api_key": api_key,
+        "model_name": model_name,
+        "temperature": float(raw.get("temperature", 0.2)),
+        "top_p": float(raw.get("top_p", 0.7)),
+        "max_tokens": int(raw.get("max_tokens", 1024)),
+        "frequency_penalty": float(raw.get("frequency_penalty", 0)),
+        "presence_penalty": float(raw.get("presence_penalty", 0)),
+        "stream": bool(raw.get("stream", False)),
+        "is_reasoning_model": bool(raw.get("is_reasoning_model", False)),
+    }
+
+
+def pil_to_base64_png(image: Image.Image) -> str:
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+
+def image_to_data_url(image_path: str) -> str:
+    if image_path.startswith("file://"):
+        image_path = image_path[len("file://") :]
+    with Image.open(image_path) as image:
+        original_image = image.copy()
+    return f"data:image/png;base64,{pil_to_base64_png(original_image)}"
+
+
+def convert_messages_to_openai_image_url(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Convert Mobile-Agent message parts to OpenAI-compatible multimodal parts."""
+    converted = []
+    for message in messages:
+        content = []
+        for item in message["content"]:
+            if "text" in item:
+                content.append({"type": "text", "text": item["text"]})
+            elif "image" in item:
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": image_to_data_url(item["image"])},
+                    }
+                )
+        converted.append({"role": message["role"], "content": content})
+    return converted
+
+
+def parse_streaming_response(response: requests.Response) -> tuple[str, str]:
+    chunks = []
+    reasoning_chunks = []
+    for raw_line in response.iter_lines(decode_unicode=True):
+        if not raw_line:
+            continue
+        line = raw_line.strip()
+        if line.startswith("data:"):
+            line = line[len("data:") :].strip()
+        if line == "[DONE]":
+            break
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        choices = event.get("choices") or []
+        if not choices:
+            continue
+        choice = choices[0]
+        delta = choice.get("delta") or {}
+        message = choice.get("message") or {}
+        if delta.get("reasoning_content"):
+            reasoning_chunks.append(delta["reasoning_content"])
+        if delta.get("content"):
+            chunks.append(delta["content"])
+        if message.get("content"):
+            chunks.append(message["content"])
+    return "".join(chunks), "".join(reasoning_chunks)
+
+
+class OpenAICompatibleMultimodalClient:
+    def __init__(
+        self,
+        endpoint_url: str,
+        api_key: str,
+        model_name: str,
+        temperature: float = 0.2,
+        top_p: float = 0.7,
+        max_tokens: int = 1024,
+        frequency_penalty: float = 0,
+        presence_penalty: float = 0,
+        stream: bool = True,
+        max_retry: int = 3,
+        llm_trace_dir: str | None = None,
+        is_reasoning_model: bool = False,
+    ):
+        self.endpoint_url = endpoint_url
+        self.api_key = api_key
+        self.model_name = model_name
+        self.temperature = temperature
+        self.top_p = top_p
+        self.max_tokens = max_tokens
+        self.frequency_penalty = frequency_penalty
+        self.presence_penalty = presence_penalty
+        self.stream = stream
+        self.max_retry = max_retry
+        self.trace_logger = LlmTraceLogger(llm_trace_dir)
+        self.is_reasoning_model = is_reasoning_model
+
+    def invoke(self, messages: list[dict[str, Any]]) -> tuple[str, Any, Any]:
+        payload_messages = convert_messages_to_openai_image_url(messages)
+        payload = {
+            "model": self.model_name,
+            "messages": payload_messages,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "frequency_penalty": self.frequency_penalty,
+            "presence_penalty": self.presence_penalty,
+            "max_tokens": self.max_tokens,
+            "stream": self.stream,
+        }
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+        metadata = {
+            "provider": "http-openai-compatible",
+            "model": self.model_name,
+            "url": self.endpoint_url,
+            "wrapper": self.__class__.__name__,
+            "stream": self.stream,
+        }
+
+        wait_seconds = 5
+        last_error: Exception | None = None
+        for attempt in range(1, self.max_retry + 1):
+            try:
+                response = requests.post(
+                    self.endpoint_url,
+                    json=payload,
+                    headers=headers,
+                    stream=self.stream,
+                    timeout=300,
+                )
+                response.raise_for_status()
+                if self.stream:
+                    content, reasoning = parse_streaming_response(response)
+                    if self.is_reasoning_model and reasoning:
+                        print(f"[REASONING]\n{reasoning}")
+                    self.trace_logger.log(payload, {"content": content, "reasoning": reasoning or None}, metadata=metadata)
+                    return content, payload_messages, response
+                body = response.json()
+                self.trace_logger.log(payload, body, metadata=metadata)
+                message = body["choices"][0]["message"]
+                reasoning = message.get("reasoning_content") or message.get("reasoning")
+                if self.is_reasoning_model and reasoning:
+                    print(f"[REASONING]\n{reasoning}")
+                content = message.get("content")
+                if content is None:
+                    tool_calls = message.get("tool_calls") or []
+                    if tool_calls:
+                        content = "\n".join(json.dumps(call, ensure_ascii=False) for call in tool_calls)
+                    else:
+                        content = message.get("reasoning") or ""
+                return content, payload_messages, body
+            except Exception as exc:
+                last_error = exc
+                self.trace_logger.log(payload, None, metadata=metadata, error=exc)
+                print(f"[WARN] Qwen3.5 call failed on attempt {attempt}: {exc}")
+                if attempt < self.max_retry:
+                    time.sleep(wait_seconds)
+
+        raise LLMInvokeError(
+            f"LLM invoke failed after {self.max_retry} attempts for model '{self.model_name}' at '{self.endpoint_url}': {last_error}"
+        )
+
+
+def create_llm_client(config_path: str = DEFAULT_MODEL_CONFIG_PATH, llm_trace_dir: str | None = None) -> OpenAICompatibleMultimodalClient:
+    cfg = load_model_config(config_path)
+    return OpenAICompatibleMultimodalClient(
+        endpoint_url=cfg["endpoint_url"],
+        api_key=cfg["api_key"],
+        model_name=cfg["model_name"],
+        temperature=cfg["temperature"],
+        top_p=cfg["top_p"],
+        max_tokens=cfg["max_tokens"],
+        frequency_penalty=cfg["frequency_penalty"],
+        presence_penalty=cfg["presence_penalty"],
+        stream=cfg["stream"],
+        is_reasoning_model=cfg["is_reasoning_model"],
+        llm_trace_dir=llm_trace_dir,
+    )
+
+
+def resolve_target_app_name_from_instruction(
+    instruction: str,
+    api_key: str,
+    endpoint_url: str,
+    model_name: str,
+) -> tuple[str, str]:
+    """Extract the commercial app name from a task instruction.
+
+    Returns:
+        A tuple of (app_name, reason). app_name is empty when no app can be
+        confidently extracted.
+    """
+    prompt = (
+        "You are an app-name extractor. Given a task instruction, extract the "
+        "commercial app name that should be opened first. Return only JSON.\n\n"
+        "Rules:\n"
+        "- If the instruction mentions an app by name, return that app name.\n"
+        "- If the instruction implies a specific app but names it indirectly, return the commercial name.\n"
+        "- If no app is required or the app cannot be identified, return an empty app_name.\n\n"
+        "Output JSON schema:\n"
+        '{"reason": "brief reason", "app_name": "commercial app name or empty string"}\n\n'
+        f'Instruction: "{instruction}"'
+    )
+
+    payload = {
+        "model": model_name,
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_tokens": 128,
+        "stream": False,
+    }
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+
+    try:
+        response = requests.post(endpoint_url, json=payload, headers=headers, timeout=60)
+        response.raise_for_status()
+        body = response.json()
+        content = body["choices"][0]["message"].get("content") or ""
+        parsed = _try_parse_json(content)
+        if isinstance(parsed, dict):
+            return str(parsed.get("app_name", "")).strip(), str(parsed.get("reason", "")).strip()
+        match = re.search(r'"app_name"\s*:\s*"([^"]*)"', content)
+        if match:
+            return match.group(1).strip(), "Recovered app_name from malformed JSON response"
+        return "", f"Failed to parse app name from LLM response: {content}"
+    except Exception as exc:
+        return "", f"Failed to resolve app name via LLM: {exc}"
+
+
