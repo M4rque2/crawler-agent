@@ -18,12 +18,12 @@ Only these two actions use coordinates. All coordinates are normalized to the 0�
 
 **`click`** — Tap a point on the screen.
 ```
-{"action": "click", "coordinate": [x, y]}
+{"name": "mobile_use", "arguments": {"action": "click", "coordinate": [x, y]}}
 ```
 
 **`swipe`** — Drag from one point to another.
 ```
-{"action": "swipe", "coordinate": [x, y], "coordinate2": [x2, y2]}
+{"name": "mobile_use", "arguments": {"action": "swipe", "coordinate": [x, y], "coordinate2": [x2, y2]}}
 ```
 
 ---
@@ -34,17 +34,17 @@ Only these three actions use the `text` parameter.
 
 **`type`** — Type text into the currently focused input field.
 ```
-{"action": "type", "text": "your text here"}
+{"name": "mobile_use", "arguments": {"action": "type", "text": "your text here"}}
 ```
 
 **`open`** — Launch an app by its name.
 ```
-{"action": "open", "text": "小红书"}
+{"name": "mobile_use", "arguments": {"action": "open", "text": "小红书"}}
 ```
 
 **`interact`** — Pause and hand control to the human operator for a step the agent cannot complete (e.g. login, CAPTCHA, permission dialog). The `text` field describes what the human needs to do.
 ```
-{"action": "interact", "text": "Please log in with your credentials and press Enter when done."}
+{"name": "mobile_use", "arguments": {"action": "interact", "text": "Please log in with your credentials and press Enter when done."}}
 ```
 
 ---
@@ -53,7 +53,7 @@ Only these three actions use the `text` parameter.
 
 **`system_button`** — Press a hardware or system navigation button.
 ```
-{"action": "system_button", "button": "Back"}
+{"name": "mobile_use", "arguments": {"action": "system_button", "button": "Back"}}
 ```
 Valid values for `button`: `Back`, `Home`, `Menu`, `Enter`
 
@@ -64,13 +64,13 @@ Valid values for `button`: `Back`, `Home`, `Menu`, `Enter`
 **`extract`** — Record structured data from the current screen. The task **continues** after extract; do not use terminate for data collection.
 Required: `data` (JSON object of the fields you are recording).
 ```
-{"action": "extract", "data": {"title": "...", "author": "...", "likes": 43, "collects": 21}}
+{"name": "mobile_use", "arguments": {"action": "extract", "data": {"title": "...", "author": "...", "likes": 43, "collects": 21}}}
 ```
 
 **`terminate`** — End the task and report its outcome.
 Required: `summary` (what was accomplished or why it failed), `status`.
 ```
-{"action": "terminate", "summary": "Collected 10 note records from xxx app.", "status": "success"}
+{"name": "mobile_use", "arguments": {"action": "terminate", "summary": "Collected 10 note records from xxx app.", "status": "success"}}
 ```
 
 ---
