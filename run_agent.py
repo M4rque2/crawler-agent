@@ -56,7 +56,7 @@ def parse_args():
         "--history-length",
         dest="history_n",
         type=int,
-        default=4,
+        default=6,
         help="Number of previous screenshot turns to include.",
     )
     parser.add_argument(
