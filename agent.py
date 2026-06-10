@@ -23,7 +23,7 @@ def build_messages(
     system_prompt,
     task_prompt,
     history_output,
-    history_n=4,
+    history_n=6,
     reference_image_path=None,
     reference_text=None,
     feedback=None,
