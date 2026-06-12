@@ -4,7 +4,6 @@ import copy
 import json
 import os
 import time
-from datetime import datetime
 from typing import Any
 
 from agent_io import (
@@ -14,17 +13,70 @@ from agent_io import (
     format_turn_response,
     parse_turn_response,
     rescale_coordinates,
-    summarize_history_output,
 )
 
-def build_today_str():
-    today = datetime.today()
-    weekday_names = [
-        "Monday", "Tuesday", "Wednesday", "Thursday",
-        "Friday", "Saturday", "Sunday",
+def _extract_note_records(data: Any) -> list[dict[str, Any]]:
+    if not isinstance(data, dict):
+        return []
+    records = data.get("notes") if isinstance(data.get("notes"), list) else None
+    if records is None:
+        note_detail = data.get("note_detail")
+        records = [note_detail] if isinstance(note_detail, dict) else [data]
+    return [record for record in records if isinstance(record, dict)]
+
+
+def build_collection_memory(output_jsonl_path: str, max_items: int = 12) -> str:
+    """Summarize collected item identities for the next VLM turn."""
+    if not os.path.exists(output_jsonl_path):
+        return (
+            "Collection memory:\n"
+            "Collected items so far: 0.\n"
+            "After returning to the source/list screen, choose an unseen visible item."
+        )
+
+    items: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    with open(output_jsonl_path, "r", encoding="utf-8") as output_file:
+        for line in output_file:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            for record in _extract_note_records(payload.get("data")):
+                title = str(record.get("note_title") or record.get("note_text") or "").strip()
+                author = str(record.get("author_name") or "").strip()
+                identity = (title, author)
+                if identity in seen:
+                    continue
+                seen.add(identity)
+                items.append(identity)
+
+    if not items:
+        return (
+            "Collection memory:\n"
+            "Collected items so far: 0.\n"
+            "After returning to the source/list screen, choose an unseen visible item."
+        )
+
+    listed_items = items[-max_items:]
+    lines = [
+        "Collection memory:",
+        f"Collected items so far: {len(items)}.",
+        "Already collected; do not reopen or extract these items:",
     ]
-    formatted_date = today.strftime("%Y-%m-%d") + " " + weekday_names[today.weekday()]
-    return f"Today's date is: {formatted_date}."
+    for index, (title, author) in enumerate(listed_items, start=1):
+        label = title or "(missing title)"
+        if author:
+            label = f"{label} - {author}"
+        lines.append(f"{index}. {label}")
+    lines.append(
+        "If the source/list screen's visible items are already collected or recently attempted, scroll to reveal more unseen items."
+    )
+    return "\n".join(lines)
+
 
 def build_messages(
     image_path,
@@ -35,34 +87,29 @@ def build_messages(
     reference_image_path=None,
     reference_text=None,
     feedback=None,
+    collection_memory=None,
 ):
     """Construct multi-turn messages for the VLM."""
-    current_step = len(history_output)
-    history_start_idx = max(0, current_step - history_n)
-
-    previous_actions = []
-    for i in range(history_start_idx):
-        if i < len(history_output):
-            text = summarize_history_output(history_output[i]["output"])
-            previous_actions.append(f"Step {i + 1}: {text}")
-
-    previous_actions_str = "\n".join(previous_actions) if previous_actions else "None"
-
-    date_info = build_today_str()
-
-    task_prompt_message = (
-        f"Please generate the next action according to the UI screenshot, "
-        f"task prompt and previous actions.\n\n"
-        f"Task prompt: {task_prompt}\n\n"
-        f"Previous actions:\n{previous_actions_str}"
+    turn_instruction = (
+        "Decide the next mobile action from the current screenshot.\n"
+        "Output exactly these 3 parts and nothing else:\n"
+        "Action: <one short imperative sentence>\n"
+        "Prediction: <one short sentence describing the expected next screenshot/page after the action>\n"
+        "<tool_call>\n"
+        "{\"name\": \"mobile_use\", \"arguments\": { ... }}\n"
+        "</tool_call>"
     )
     if reference_image_path:
         reference_prompt = reference_text or "Use the reference image to recognize the target UI region on the current screenshot."
-        task_prompt_message = (
-            f"{task_prompt_message}\n\n"
+        turn_instruction = (
+            f"{turn_instruction}\n\n"
             f"Reference image guidance: {reference_prompt}\n"
             f"The first image is the reference image. The last image is the current screenshot."
         )
+
+    turn_text_parts = [{"text": turn_instruction}]
+    if collection_memory:
+        turn_text_parts.append({"text": collection_memory})
 
     messages = [
         {
@@ -75,7 +122,7 @@ def build_messages(
     if history_len > 0:
         for idx, item in enumerate(history_output[-history_n:]):
             if idx == 0:
-                first_turn_content = [{"text": task_prompt_message}]
+                first_turn_content = [{"text": task_prompt}, *turn_text_parts]
                 if reference_image_path:
                     first_turn_content.append({"image": "file://" + reference_image_path})
                 first_turn_content.append({"image": "file://" + item["image"]})
@@ -86,7 +133,7 @@ def build_messages(
             else:
                 messages.append({
                     "role": "user",
-                    "content": [{"image": "file://" + item["image"]}],
+                    "content": [*turn_text_parts, {"image": "file://" + item["image"]}],
                 })
             messages.append({
                 "role": "assistant",
@@ -94,10 +141,14 @@ def build_messages(
             })
         messages.append({
             "role": "user",
-            "content": [{"text": feedback}] if feedback is not None else [{"image": "file://" + image_path}],
+            "content": (
+                [*turn_text_parts, {"text": feedback}]
+                if feedback is not None
+                else [*turn_text_parts, {"image": "file://" + image_path}]
+            ),
         })
     else:
-        first_turn_content = [{"text": task_prompt_message}]
+        first_turn_content = [{"text": task_prompt}, *turn_text_parts]
         if reference_image_path:
             first_turn_content.append({"image": "file://" + reference_image_path})
         first_turn_content.append({"image": "file://" + image_path})
@@ -173,6 +224,7 @@ def run_agent_loop(
             history,
             history_n=history_n,
             feedback=feedback,
+            collection_memory=build_collection_memory(output_jsonl_path),
         )
         try:
             output_text, _, _ = vlm.invoke(messages)
