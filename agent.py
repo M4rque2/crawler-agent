@@ -17,6 +17,14 @@ from agent_io import (
     summarize_history_output,
 )
 
+def build_today_str():
+    today = datetime.today()
+    weekday_names = [
+        "Monday", "Tuesday", "Wednesday", "Thursday",
+        "Friday", "Saturday", "Sunday",
+    ]
+    formatted_date = today.strftime("%Y-%m-%d") + " " + weekday_names[today.weekday()]
+    return f"Today's date is: {formatted_date}."
 
 def build_messages(
     image_path,
@@ -40,18 +48,12 @@ def build_messages(
 
     previous_actions_str = "\n".join(previous_actions) if previous_actions else "None"
 
-    today = datetime.today()
-    weekday_names = [
-        "Monday", "Tuesday", "Wednesday", "Thursday",
-        "Friday", "Saturday", "Sunday",
-    ]
-    formatted_date = today.strftime("%Y-%m-%d") + " " + weekday_names[today.weekday()]
-    date_info = f"Today's date is: {formatted_date}."
+    date_info = build_today_str()
 
     task_prompt_message = (
         f"Please generate the next action according to the UI screenshot, "
         f"task prompt and previous actions.\n\n"
-        f"Task prompt: {date_info}{task_prompt}\n\n"
+        f"Task prompt: {task_prompt}\n\n"
         f"Previous actions:\n{previous_actions_str}"
     )
     if reference_image_path:
