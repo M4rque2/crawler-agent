@@ -644,13 +644,29 @@ def parse_action(tool_call: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _summary_from_output_text(output_text: str) -> str:
+def _field_from_output_text(output_text: str, field_name: str) -> str:
     if not output_text:
         return ""
     before_tool_call = output_text.split("<tool_call>", 1)[0].strip()
-    if before_tool_call.lower().startswith("action:"):
-        before_tool_call = before_tool_call.split(":", 1)[1].strip()
-    return before_tool_call
+    pattern = rf"(?ims)^\s*{re.escape(field_name)}\s*:\s*(.*?)(?=^\s*(?:Expectation Check|Reason|Action|Expectation)\s*:|\Z)"
+    match = re.search(pattern, before_tool_call)
+    return match.group(1).strip() if match else ""
+
+
+def _action_from_output_text(output_text: str) -> str:
+    return _field_from_output_text(output_text, "Action")
+
+
+def _expectation_from_output_text(output_text: str) -> str:
+    return _field_from_output_text(output_text, "Expectation")
+
+
+def _expectation_check_from_output_text(output_text: str) -> str:
+    check = _field_from_output_text(output_text, "Expectation Check")
+    reason = _field_from_output_text(output_text, "Reason")
+    if check and reason:
+        return f"{check}\nReason: {reason}"
+    return check
 
 
 def format_turn_response(response: dict[str, Any]) -> str:
@@ -667,8 +683,12 @@ def format_turn_response(response: dict[str, Any]) -> str:
             "arguments": arguments,
         }
     summary = response.get("summary") or arguments.get("summary") or f"Run mobile action: {arguments.get('action')}"
+    expectation_check = response.get("expectation_check") or "unknown\nReason: No previous expectation was provided."
+    expectation = response.get("expectation") or "The next screen will reflect the requested action."
     return (
+        f"Expectation Check: {expectation_check}\n"
         f"Action: {summary}\n"
+        f"Expectation: {expectation}\n"
         "<tool_call>\n"
         f"{json.dumps(tool_call, ensure_ascii=False)}\n"
         "</tool_call>"
@@ -686,7 +706,9 @@ def parse_turn_response(output_text: str) -> dict[str, Any]:
     action = arguments.get("action")
     if not isinstance(action, str) or not action:
         raise ValueError(f"tool_call arguments missing action: {tool_call}")
-    summary = arguments.get("summary") or _summary_from_output_text(output_text)
+    summary = arguments.get("summary") or _action_from_output_text(output_text)
+    expectation = _expectation_from_output_text(output_text)
+    expectation_check = _expectation_check_from_output_text(output_text)
 
     if action == "extract" and not isinstance(arguments.get("data"), dict):
         raise ValueError(f"Extract action missing data object: {tool_call}")
@@ -698,6 +720,8 @@ def parse_turn_response(output_text: str) -> dict[str, Any]:
 
     return {
         "summary": summary or f"Run mobile action: {action}",
+        "expectation": expectation,
+        "expectation_check": expectation_check,
         "tool_call": tool_call,
     }
 

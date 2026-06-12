@@ -88,13 +88,16 @@ def build_messages(
     reference_text=None,
     feedback=None,
     collection_memory=None,
+    previous_expectation=None,
 ):
     """Construct multi-turn messages for the VLM."""
     turn_instruction = (
         "Decide the next mobile action from the current screenshot.\n"
-        "Output exactly these 3 parts and nothing else:\n"
+        "First compare the previous expectation with the current screenshot.\n"
+        "Output exactly these 4 parts and nothing else:\n"
+        "Expectation Check: <fulfilled | not_fulfilled | unknown> - <brief reason>\n"
         "Action: <one short imperative sentence>\n"
-        "Prediction: <one short sentence describing the expected next screenshot/page after the action>\n"
+        "Expectation: <one short sentence describing the expected next screenshot/page after the action>\n"
         "<tool_call>\n"
         "{\"name\": \"mobile_use\", \"arguments\": { ... }}\n"
         "</tool_call>"
@@ -108,6 +111,12 @@ def build_messages(
         )
 
     turn_text_parts = [{"text": turn_instruction}]
+    turn_text_parts.append({
+        "text": (
+            "Previous expectation:\n"
+            f"{previous_expectation or 'None. Use Expectation Check: unknown.'}"
+        )
+    })
     if collection_memory:
         turn_text_parts.append({"text": collection_memory})
 
@@ -200,6 +209,7 @@ def run_agent_loop(
     output_jsonl_path = os.path.join(task_root, "output.jsonl")
     last_screenshot_path: str | None = None
     pending_feedback: str | None = None
+    last_expectation: str | None = None
 
     for step_id in range(max_steps):
         print(f"\n{'=' * 50}\nSTEP {step_id}\n{'=' * 50}")
@@ -225,6 +235,7 @@ def run_agent_loop(
             history_n=history_n,
             feedback=feedback,
             collection_memory=build_collection_memory(output_jsonl_path),
+            previous_expectation=last_expectation,
         )
         try:
             output_text, _, _ = vlm.invoke(messages)
@@ -241,6 +252,7 @@ def run_agent_loop(
             continue
 
         history_output = format_turn_response(response)
+        last_expectation = response.get("expectation") or None
         action_parameter = copy.deepcopy(response["tool_call"]["arguments"])
         action_type = action_parameter["action"]
 
