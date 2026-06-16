@@ -24,7 +24,7 @@ Current completed foundations in this repository:
 
 - **Action space.** We have implemented a practical action schema for mobile control, including click, swipe, type, system button operations, open app, and wait.
 - **Observing system (`agent_io.py`).** We have implemented device interaction and observation utilities around ADB, including screenshot capture, UI hierarchy dump, device state checks, and action execution helpers.
-- **Basic agent loop (`agent.py`).** We have implemented the core loop: observe screen, build messages, call multimodal model, parse structured response, execute one action, and continue step by step.
+- **Basic agent loop (`run_agent.py`).** We have implemented the core loop: observe screen, build messages, call multimodal model, parse structured response, execute one action, and continue step by step.
 - **Log system for analysis.** We have implemented run logs and per-step artifacts (screenshots, annotated screenshots, and LLM traces) for debugging and post-run analysis.
 
 ## What Is Pending / What We Will Do
@@ -79,8 +79,8 @@ App opening is action-driven: the agent opens apps when the model emits `action=
 
 Current core modules:
 
-- `run_agent.py`: runner entrypoint; parses args, creates task log directories, enables dual logging (stdout + file), creates model client, and starts the loop.
-- `agent.py`: message construction and main agent loop orchestration.
+- `run_agent.py`: runner entrypoint and main agent loop orchestration; parses args, creates task log directories, enables dual logging (stdout + file), creates model client, and executes actions.
+- `context_manager.py`: prompt loading helpers, collection memory, and multimodal message construction.
 - `agent_io.py`: ADB actions, state preflight helpers, action execution, and response parsing.
 - `llm_client.py`: OpenAI-compatible multimodal client and LLM trace logging.
 - `logs.py`: per-run task directory creation and tee-style logging setup.
@@ -96,7 +96,7 @@ Current top-level structure includes:
 Mobile-Agent/
   README.md
   run_agent.py
-  agent.py
+  context_manager.py
   agent_io.py
   llm_client.py
   logs.py
