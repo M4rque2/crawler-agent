@@ -2,7 +2,13 @@
 
 import json
 import os
+import re
+from pathlib import Path
 from typing import Any
+
+from PIL import Image
+
+MARKDOWN_IMAGE_RE = re.compile(r"!\[[^\]\n]*\]\(([^)\n]+)\)")
 
 
 def _extract_item_records(data: Any) -> list[dict[str, Any]]:
@@ -68,19 +74,84 @@ def build_collection_memory(output_jsonl_path: str, max_items: int = 12) -> str:
     return "\n".join(lines)
 
 
+def _validate_prompt_image(image_path: Path, prompt_path: Path) -> None:
+    if not image_path.exists():
+        raise SystemExit(
+            f"Missing image referenced by {prompt_path}: {image_path}"
+        )
+    if not image_path.is_file():
+        raise SystemExit(
+            f"Image reference is not a file in {prompt_path}: {image_path}"
+        )
+    try:
+        with Image.open(image_path) as image:
+            image.verify()
+    except Exception as exc:
+        raise SystemExit(
+            f"Cannot open image referenced by {prompt_path}: {image_path} ({exc})"
+        ) from exc
+
+
+def parse_task_prompt_markdown(markdown_text: str, prompt_path: Path) -> list[dict[str, str]]:
+    """Convert Markdown image inserts into ordered VLM message parts."""
+    parts: list[dict[str, str]] = []
+    cursor = 0
+    prompt_dir = prompt_path.parent
+
+    for match in MARKDOWN_IMAGE_RE.finditer(markdown_text):
+        text_before = markdown_text[cursor:match.start()]
+        if text_before:
+            parts.append({"text": text_before})
+
+        raw_image_path = match.group(1).strip()
+        if raw_image_path.startswith(("http://", "https://")):
+            raise SystemExit(
+                f"Remote image URLs are not supported in {prompt_path}: {raw_image_path}"
+            )
+
+        image_path = Path(raw_image_path)
+        if not image_path.is_absolute():
+            image_path = prompt_dir / image_path
+        image_path = image_path.resolve()
+        _validate_prompt_image(image_path, prompt_path)
+        parts.append({"image": "file://" + str(image_path)})
+        cursor = match.end()
+
+    text_after = markdown_text[cursor:]
+    if text_after:
+        parts.append({"text": text_after})
+
+    return parts or [{"text": markdown_text}]
+
+
+def load_task_prompt_arg(prompt: str, prompt_path: str | None) -> list[dict[str, str]]:
+    if prompt_path:
+        path = Path(prompt_path).resolve()
+        markdown_text = path.read_text(encoding="utf-8").strip()
+        return parse_task_prompt_markdown(markdown_text, path)
+    if prompt:
+        return [{"text": prompt}]
+    raise SystemExit("Missing task_prompt: provide --task-prompt or --task-prompt-path.")
+
+
+def _normalize_prompt_parts(prompt: str | list[dict[str, str]]) -> list[dict[str, str]]:
+    if isinstance(prompt, str):
+        return [{"text": prompt}]
+    return list(prompt)
+
+
 def build_messages(
     image_path,
     system_prompt,
     task_prompt,
     history_output,
     history_n=6,
-    reference_image_path=None,
-    reference_text=None,
     feedback=None,
     collection_memory=None,
     previous_expectation=None,
 ):
     """Construct multi-turn messages for the VLM."""
+    task_prompt_parts = _normalize_prompt_parts(task_prompt)
     turn_instruction = (
         "Decide the next mobile action from the current screenshot.\n"
         "First compare the previous expectation with the current screenshot.\n"
@@ -92,13 +163,6 @@ def build_messages(
         "{\"name\": \"mobile_use\", \"arguments\": { ... }}\n"
         "</tool_call>"
     )
-    if reference_image_path:
-        reference_prompt = reference_text or "Use the reference image to recognize the target UI region on the current screenshot."
-        turn_instruction = (
-            f"{turn_instruction}\n\n"
-            f"Reference image guidance: {reference_prompt}\n"
-            f"The first image is the reference image. The last image is the current screenshot."
-        )
 
     turn_text_parts = [{"text": turn_instruction}]
     turn_text_parts.append({
@@ -121,9 +185,7 @@ def build_messages(
     if history_len > 0:
         for idx, item in enumerate(history_output[-history_n:]):
             if idx == 0:
-                first_turn_content = [{"text": task_prompt}, *turn_text_parts]
-                if reference_image_path:
-                    first_turn_content.append({"image": "file://" + reference_image_path})
+                first_turn_content = [*task_prompt_parts, *turn_text_parts]
                 first_turn_content.append({"image": "file://" + item["image"]})
                 messages.append({
                     "role": "user",
@@ -147,9 +209,7 @@ def build_messages(
             ),
         })
     else:
-        first_turn_content = [{"text": task_prompt}, *turn_text_parts]
-        if reference_image_path:
-            first_turn_content.append({"image": "file://" + reference_image_path})
+        first_turn_content = [*task_prompt_parts, *turn_text_parts]
         first_turn_content.append({"image": "file://" + image_path})
         messages.append({
             "role": "user",
