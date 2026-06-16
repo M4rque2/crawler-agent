@@ -88,33 +88,5 @@ def resolve_package_ids(app_name: str) -> list[str]:
     return NAME_PACKAGE_DICT.get(normalized_name, [])
 
 
-def resolve_package_id(app_name: str) -> str:
-    """Resolve the first package id for a commercial app name or alias."""
-    package_ids = resolve_package_ids(app_name)
-    return package_ids[0] if package_ids else ""
-
-
-def resolve_package_ids_from_instruction(instruction: str) -> tuple[str, list[str]]:
-    """Resolve package ids by matching known aliases directly in instruction text.
-
-    Returns:
-        (matched_alias, package_ids). If no alias is matched, returns ("", []).
-    """
-    normalized_instruction = normalize_package_name(instruction)
-    if not normalized_instruction:
-        return "", []
-
-    matched_alias = ""
-    # Prefer the longest alias to avoid generic/short alias collisions.
-    for alias in sorted(NAME_PACKAGE_DICT.keys(), key=len, reverse=True):
-        if alias and alias in normalized_instruction:
-            matched_alias = alias
-            break
-
-    if not matched_alias:
-        return "", []
-    return matched_alias, NAME_PACKAGE_DICT.get(matched_alias, [])
-
-
 MAPPING_ENTRIES = load_mapping_entries()
 PACKAGES_NAME_DICT, NAME_PACKAGE_DICT = build_package_dicts(MAPPING_ENTRIES)

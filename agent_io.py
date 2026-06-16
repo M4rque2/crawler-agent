@@ -10,7 +10,6 @@ import os
 import re
 import shutil
 import subprocess
-import tempfile
 import time
 import unicodedata
 import copy
@@ -101,60 +100,6 @@ class AdbTools:
                 )
             time.sleep(0.1)
         return False
-
-    def dump_ui_hierarchy(
-        self,
-        output_path,
-        retry_times=3,
-        retry_delay_seconds=1,
-        compressed=False,
-    ):
-        output_path = os.fspath(output_path)
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        remote_name = f"window_dump_{int(time.time() * 1000)}.xml"
-        remote_path = f"/sdcard/{remote_name}"
-        dump_args = ["shell", "uiautomator", "dump"]
-        if compressed:
-            dump_args.append("--compressed")
-        dump_args.append(remote_path)
-
-        dump_succeeded = False
-        for attempt in range(1, retry_times + 1):
-            self._run_args(["shell", "input", "keyevent", "KEYCODE_WAKEUP"])
-            time.sleep(0.3)
-            dump_result = self._run_args(dump_args)
-            dump_output = f"{dump_result.stdout}\n{dump_result.stderr}".strip()
-            if dump_output:
-                print(f"[UI XML] dump attempt {attempt}/{retry_times}: {dump_output}")
-            ls_result = self._run_args(["shell", "ls", remote_path])
-            remote_exists = ls_result.returncode == 0 and "No such file or directory" not in (
-                f"{ls_result.stdout}\n{ls_result.stderr}"
-            )
-            if dump_result.returncode == 0 and remote_exists:
-                dump_succeeded = True
-                break
-            if attempt < retry_times:
-                time.sleep(retry_delay_seconds)
-
-        if not dump_succeeded:
-            print(f"[WARN] uiautomator dump failed after {retry_times} attempts: {remote_path}")
-            return False
-
-        temp_dir = tempfile.mkdtemp(prefix="ui_dump_")
-        try:
-            pull_result = self._run_args(["pull", remote_path, temp_dir])
-            if pull_result.returncode != 0:
-                print(f"[WARN] adb pull failed: {pull_result.stderr.strip()}")
-                return False
-            pulled_path = os.path.join(temp_dir, remote_name)
-            if not os.path.exists(pulled_path):
-                print(f"[WARN] Pulled XML file missing: {pulled_path}")
-                return False
-            shutil.move(pulled_path, output_path)
-            return True
-        finally:
-            self._run_args(["shell", "rm", remote_path])
-            shutil.rmtree(temp_dir, ignore_errors=True)
 
     def click(self, x, y):
         self._run(f"shell input tap {x} {y}")
@@ -724,27 +669,6 @@ def parse_turn_response(output_text: str) -> dict[str, Any]:
         "expectation_check": expectation_check,
         "tool_call": tool_call,
     }
-
-
-def summarize_history_output(text: str) -> str:
-    """Summarize prior assistant output using the shared response parser."""
-    try:
-        response = parse_turn_response(text)
-    except Exception:
-        if text and "<tool_call>" in text:
-            return text.split("<tool_call>", 1)[0].strip()
-        return (text or "").strip()
-
-    tool_call = parse_action(response.get("tool_call"))
-    arguments = tool_call["arguments"]
-    action = arguments.get("action", "unknown")
-    if action == "extract":
-        return response.get("summary") or arguments.get("summary") or "Extracted target page data"
-    if action == "terminate":
-        status = arguments.get("status", "unknown")
-        summary = response.get("summary") or arguments.get("summary") or "Terminated"
-        return f"Terminate ({status}): {summary}"
-    return response.get("summary") or f"Action {action}: {json.dumps(arguments, ensure_ascii=False)}"
 
 
 def handle_open_action(

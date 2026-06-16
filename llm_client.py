@@ -2,7 +2,6 @@
 
 import base64
 import json
-import re
 import time
 import uuid
 from datetime import datetime
@@ -31,19 +30,6 @@ def _json_safe(value):
         if hasattr(value, "dict"):
             return _json_safe(value.dict())
         return str(value)
-
-def _try_parse_json(text: str):
-    if not text:
-        return None
-    try:
-        cleaned = text.strip()
-        if "```json" in cleaned:
-            cleaned = cleaned.split("```json", 1)[1].split("```", 1)[0].strip()
-        elif "```" in cleaned:
-            cleaned = cleaned.split("```", 1)[1].split("```", 1)[0].strip()
-        return json.loads(cleaned)
-    except Exception:
-        return None
 
 class LlmTraceLogger:
     def __init__(self, trace_dir=None):
@@ -299,62 +285,3 @@ def create_llm_client(config_path: str = DEFAULT_MODEL_CONFIG_PATH, llm_trace_di
         is_reasoning_model=cfg["is_reasoning_model"],
         llm_trace_dir=llm_trace_dir,
     )
-
-
-def resolve_target_app_name_from_instruction(
-    instruction: str,
-    api_key: str,
-    endpoint_url: str,
-    model_name: str,
-) -> tuple[str, str]:
-    """Extract the commercial app name from a task instruction.
-
-    Returns:
-        A tuple of (app_name, reason). app_name is empty when no app can be
-        confidently extracted.
-    """
-    prompt = (
-        "You are an app-name extractor. Given a task instruction, extract the "
-        "commercial app name that should be opened first. Return only JSON.\n\n"
-        "Rules:\n"
-        "- If the instruction mentions an app by name, return that app name.\n"
-        "- If the instruction implies a specific app but names it indirectly, return the commercial name.\n"
-        "- If no app is required or the app cannot be identified, return an empty app_name.\n\n"
-        "Output JSON schema:\n"
-        '{"reason": "brief reason", "app_name": "commercial app name or empty string"}\n\n'
-        f'Instruction: "{instruction}"'
-    )
-
-    payload = {
-        "model": model_name,
-        "messages": [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": 0,
-        "top_p": 1,
-        "max_tokens": 128,
-        "stream": False,
-    }
-    headers = {
-        "accept": "application/json",
-        "content-type": "application/json",
-        "Authorization": f"Bearer {api_key}",
-    }
-
-    try:
-        response = requests.post(endpoint_url, json=payload, headers=headers, timeout=60)
-        response.raise_for_status()
-        body = response.json()
-        content = body["choices"][0]["message"].get("content") or ""
-        parsed = _try_parse_json(content)
-        if isinstance(parsed, dict):
-            return str(parsed.get("app_name", "")).strip(), str(parsed.get("reason", "")).strip()
-        match = re.search(r'"app_name"\s*:\s*"([^"]*)"', content)
-        if match:
-            return match.group(1).strip(), "Recovered app_name from malformed JSON response"
-        return "", f"Failed to parse app name from LLM response: {content}"
-    except Exception as exc:
-        return "", f"Failed to resolve app name via LLM: {exc}"
-
-
