@@ -7,6 +7,7 @@ tasks/**/traces/
 tasks/**/*.json
 references/agent-frameworks/
 *config.json
+.DS_Store
 
 # Runtime artifacts (logs, screenshots, llm request/response traces)
 *.log
@@ -19,3 +20,4 @@ tasks/*/20??-??-??_??-??-??/
 **/screenshot/
 **/screenshot_anno/
 **/llm-tracer/
+

@@ -958,6 +958,14 @@
       "aliases": [
         "脉脉"
       ]
+    },
+    {
+      "package_id": "com.byd.flashcharge",
+      "aliases": [
+        "byd_flash_charge",
+        "比亚迪闪充",
+        "比亚迪闪充app"
+      ]
     }
   ]
 }
