@@ -104,7 +104,7 @@ Mobile-Agent/
   app_name_to_package.json
   research_notes/      # Investigation notes, empirical findings, and future implementation TODOs
   tasks/               # Task prompts + run scripts + per-run artifacts
-  references/          # Third-party reference implementations for study
+  .reference-repos/    # Ignored, read-only local clones of third-party projects
 ```
 
 Per-run artifacts are created under task run directories (often via `--trace-dir`) with this layout:
@@ -119,18 +119,35 @@ Per-run artifacts are created under task run directories (often via `--trace-dir
 
 ## External References
 
-To speed up research and avoid reinventing baseline patterns, we keep third-party references under `references/` for local study.
+To speed up research and avoid reinventing baseline patterns, raw third-party repositories are shallow-cloned under `.reference-repos/` for local, read-only study. The entire directory is ignored by Git so these repositories do not affect this project's status or commits.
 
-- `references/gui-agent/`: mobile and GUI-agent implementations used to study action schemas, prompting, device control, tracing, and benchmark integration.
-- `references/coding-agent/`: coding-agent frameworks used to study planning loops, tool use conventions, recovery behavior, and execution harness patterns that may transfer to GUI-agent systems.
-- `references/claw-agent/`: ClawGUI-related references and supporting materials.
+Initial reference repositories:
 
-Current coding-agent references include:
+- `.reference-repos/opencode/`: [anomalyco/opencode](https://github.com/anomalyco/opencode), used to study coding-agent loops, tool execution, session management, and extensibility.
+- `.reference-repos/mobileagent/`: [X-PLUG/MobileAgent](https://github.com/X-PLUG/MobileAgent), used to study mobile GUI-agent architecture, action schemas, grounding, memory, and benchmark integration. Its local working tree uses sparse checkout for the repository root, `Mobile-Agent-v3/`, and `Mobile-Agent-v3.5/` to avoid downloading unrelated large assets.
+- `.reference-repos/ui-tars/`: [bytedance/UI-TARS](https://github.com/bytedance/UI-TARS), used to study GUI grounding, inference, action parsing, and evaluation.
 
-- `references/coding-agent/claude-code/`
-- `references/coding-agent/DeepSeek-TUI/`
+Clone a new reference repository with minimal history and without eagerly downloading unnecessary Git objects:
 
-These reference folders are for analysis and design inspiration. We should extract ideas into our own architecture and docs instead of copying code directly.
+```bash
+GIT_LFS_SKIP_SMUDGE=1 git clone \
+  --depth 1 \
+  --filter=blob:none \
+  --single-branch \
+  https://github.com/example/project.git \
+  .reference-repos/project
+```
+
+For a large repository, initialize a sparse working tree and select only the relevant source directories:
+
+```bash
+git -C .reference-repos/project sparse-checkout init --cone
+git -C .reference-repos/project sparse-checkout set path/to/source another/source/path
+```
+
+Reference repositories are untrusted, read-only research inputs. Do not modify them or run their setup scripts, hooks, tests, binaries, or containers unless that action is explicitly required and reviewed. Scope searches to the relevant repository or subdirectory so third-party files do not pollute project-wide results.
+
+Durable findings belong in `research_notes/`, including the upstream repository URL, inspected commit SHA, relevant files, conclusions, and which ideas were or were not adopted. Prefer extracting design lessons over copying implementation code.
 
 ## Research Notes
 

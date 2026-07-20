@@ -6,6 +6,7 @@ __pycache__/
 tasks/**/traces/
 tasks/**/*.json
 references/agent-frameworks/
+.reference-repos/
 *config.json
 .DS_Store
 
@@ -20,4 +21,3 @@ tasks/*/20??-??-??_??-??-??/
 **/screenshot/
 **/screenshot_anno/
 **/llm-tracer/
-
