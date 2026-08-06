@@ -21,4 +21,5 @@ tasks/*/20??-??-??_??-??-??/
 **/screenshot/
 **/screenshot_anno/
 **/llm-tracer/
+tasks/smoke/runs/
 /repr/

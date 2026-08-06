@@ -47,6 +47,11 @@ def build_package_dicts(entries: list[dict[str, object]]):
         if not isinstance(aliases_raw, list):
             continue
 
+        # Also expose the final package component as a stable Latin alias.
+        # For example, com.sina.weibo is addressable as "weibo" in addition
+        # to its localized aliases and its full package id.
+        aliases_raw = [*aliases_raw, package_id.rsplit(".", 1)[-1]]
+
         # Preserve order while removing duplicates after normalization.
         aliases: list[str] = []
         seen_aliases: set[str] = set()
@@ -85,6 +90,10 @@ def resolve_package_ids(app_name: str) -> list[str]:
     normalized_name = normalize_package_name(app_name)
     if not normalized_name:
         return []
+    # Accept a literal Android package id as well as a human-facing alias.
+    for package_id in PACKAGES_NAME_DICT:
+        if normalize_package_name(package_id) == normalized_name:
+            return [package_id]
     return NAME_PACKAGE_DICT.get(normalized_name, [])
 
 
