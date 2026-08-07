@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "id": "dead_phone_back",
+  "task_prompt": "task_prompt.md",
+  "fixture": {
+    "image": "weibo_detail.png",
+    "width": 1080,
+    "height": 2424,
+    "sha256": "fe983a6c045fc95357f5ff1252f780357f518e22d777636b710c73ea09a709f0"
+  },
+  "max_turns": 4,
+  "oracle": {
+    "kind": "lag_back",
+    "back_click_region_px": [0, 137, 115, 252]
+  }
+}

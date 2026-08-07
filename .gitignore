@@ -4,7 +4,6 @@ config.json
 __pycache__/
 *.py[cod]
 tasks/**/traces/
-tasks/**/*.json
 references/agent-frameworks/
 .reference-repos/
 *config.json

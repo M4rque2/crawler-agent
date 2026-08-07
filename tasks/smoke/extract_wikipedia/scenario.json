@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "id": "extract_wikipedia",
+  "task_prompt": "task_prompt.md",
+  "fixture": {
+    "image": "earth_article.png",
+    "width": 1080,
+    "height": 2424,
+    "sha256": "309b551e658f2b2877e42689a2d4c33dce2279dfbededffddf79d4f6d6630c3e"
+  },
+  "max_turns": 1,
+  "oracle": {
+    "kind": "extract",
+    "expected": {
+      "title": "Earth",
+      "description": "Third planet from the Sun"
+    }
+  }
+}

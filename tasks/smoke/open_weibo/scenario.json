@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "open_weibo",
+  "task_prompt": "task_prompt.md",
+  "fixture": {
+    "image": "launcher.png",
+    "width": 1080,
+    "height": 2424,
+    "sha256": "deb3b0a26e60bbeb60c1dbade449607e488f2934917fe18fbe3f3458bdddf0cc"
+  },
+  "max_turns": 1,
+  "oracle": {
+    "kind": "open_or_click",
+    "package_id": "com.sina.weibo",
+    "accepted_names": ["com.sina.weibo", "weibo", "微博"],
+    "click_region_px": [314, 237, 519, 510]
+  }
+}
