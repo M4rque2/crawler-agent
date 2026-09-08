@@ -8,6 +8,7 @@ references/agent-frameworks/
 .reference-repos/
 *config.json
 .DS_Store
+.vscode/
 
 # Runtime artifacts (logs, screenshots, llm request/response traces)
 *.log

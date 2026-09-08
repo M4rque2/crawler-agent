@@ -8,7 +8,7 @@
     "height": 2424,
     "sha256": "fe983a6c045fc95357f5ff1252f780357f518e22d777636b710c73ea09a709f0"
   },
-  "max_turns": 4,
+  "max_turns": 10,
   "oracle": {
     "kind": "lag_back",
     "back_click_region_px": [0, 137, 115, 252]
