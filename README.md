@@ -155,7 +155,6 @@ Edit `model_config.json`:
   "endpoint_url": "https://your-endpoint/v1/chat/completions",
   "api_key": "YOUR_API_KEY",
   "model_name": "YOUR_VISION_MODEL",
-  "temperature": 0.2,
   "top_p": 0.7,
   "max_tokens": 1024,
   "frequency_penalty": 0,
