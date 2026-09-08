@@ -25,7 +25,7 @@ Coding agents are optimized to solve problems using files, shell commands, APIs,
 ## Current capabilities
 
 - **Screenshot-first Android control:** captures the original-resolution screen and executes actions through ADB. The main runtime does not depend on accessibility-tree or app-internal access.
-- **OpenAI-compatible multimodal models:** supports configurable chat-completions endpoints, streaming and non-streaming responses, reasoning traces, retries, and common generation settings.
+- **OpenAI-compatible multimodal models:** supports configurable chat-completions endpoints, streamed responses, reasoning traces, and retries. Sampling settings and output limits are managed by the server.
 - **PreAct-style prediction and verification:** every model turn compares the previous action's expected result with the current screenshot before choosing the next action.
 - **Strict GUI action protocol:** validates `<tool_call>` responses and uses a normalized `0–1000` coordinate space, then scales actions to the connected device's real resolution.
 - **Crawler-native extraction:** `extract` writes incremental JSONL records without ending the task; `terminate` ends it explicitly.
@@ -155,7 +155,6 @@ Edit `model_config.json`:
   "endpoint_url": "https://your-endpoint/v1/chat/completions",
   "api_key": "YOUR_API_KEY",
   "model_name": "YOUR_VISION_MODEL",
-  "stream": false,
   "is_reasoning_model": false
 }
 ```

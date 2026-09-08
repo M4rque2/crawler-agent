@@ -99,7 +99,6 @@ def load_model_config(config_path: str) -> dict[str, Any]:
         "endpoint_url": endpoint_url,
         "api_key": api_key,
         "model_name": model_name,
-        "stream": bool(raw.get("stream", False)),
         "is_reasoning_model": bool(raw.get("is_reasoning_model", False)),
     }
 
@@ -138,33 +137,44 @@ def convert_messages_to_openai_image_url(messages: list[dict[str, Any]]) -> list
 
 
 def parse_streaming_response(response: requests.Response) -> tuple[str, str]:
+    """Assemble SSE data events, requiring the API's completion marker."""
     chunks = []
     reasoning_chunks = []
-    for raw_line in response.iter_lines(decode_unicode=True):
-        if not raw_line:
+    data_lines = []
+    response.encoding = "utf-8"
+    for line in response.iter_lines(decode_unicode=True):
+        if line:
+            field, separator, value = line.partition(":")
+            if field == "data":
+                data_lines.append(value.removeprefix(" ") if separator else "")
             continue
-        line = raw_line.strip()
-        if line.startswith("data:"):
-            line = line[len("data:") :].strip()
-        if line == "[DONE]":
-            break
+        if not data_lines:
+            continue
+        data = "\n".join(data_lines)
+        data_lines.clear()
+        if data.strip() == "[DONE]":
+            return "".join(chunks), "".join(reasoning_chunks)
         try:
-            event = json.loads(line)
-        except json.JSONDecodeError:
-            continue
+            event = json.loads(data)
+        except json.JSONDecodeError as exc:
+            raise ValueError("Malformed JSON in LLM stream") from exc
+        if not isinstance(event, dict):
+            raise ValueError("Expected a JSON object in LLM stream")
+        if event.get("error") is not None:
+            raise ValueError(f"LLM stream error: {event['error']}")
         choices = event.get("choices") or []
         if not choices:
             continue
         choice = choices[0]
         delta = choice.get("delta") or {}
         message = choice.get("message") or {}
-        if delta.get("reasoning_content"):
-            reasoning_chunks.append(delta["reasoning_content"])
-        if delta.get("content"):
-            chunks.append(delta["content"])
-        if message.get("content"):
-            chunks.append(message["content"])
-    return "".join(chunks), "".join(reasoning_chunks)
+        for part in (delta, message):
+            reasoning = part.get("reasoning_content") or part.get("reasoning")
+            if reasoning:
+                reasoning_chunks.append(reasoning)
+            if part.get("content"):
+                chunks.append(part["content"])
+    raise ValueError("LLM stream ended before [DONE]; response may be incomplete")
 
 
 class OpenAICompatibleMultimodalClient:
@@ -173,7 +183,6 @@ class OpenAICompatibleMultimodalClient:
         endpoint_url: str,
         api_key: str,
         model_name: str,
-        stream: bool = True,
         max_retry: int = 3,
         llm_trace_dir: str | None = None,
         is_reasoning_model: bool = False,
@@ -181,7 +190,6 @@ class OpenAICompatibleMultimodalClient:
         self.endpoint_url = endpoint_url
         self.api_key = api_key
         self.model_name = model_name
-        self.stream = stream
         self.max_retry = max_retry
         self.trace_logger = LlmTraceLogger(llm_trace_dir)
         self.is_reasoning_model = is_reasoning_model
@@ -191,10 +199,10 @@ class OpenAICompatibleMultimodalClient:
         payload = {
             "model": self.model_name,
             "messages": payload_messages,
-            "stream": self.stream,
+            "stream": True,
         }
         headers = {
-            "accept": "application/json",
+            "accept": "text/event-stream",
             "content-type": "application/json",
             "Authorization": f"Bearer {self.api_key}",
         }
@@ -203,47 +211,36 @@ class OpenAICompatibleMultimodalClient:
             "model": self.model_name,
             "url": self.endpoint_url,
             "wrapper": self.__class__.__name__,
-            "stream": self.stream,
+            "stream": True,
         }
 
         wait_seconds = 5
         last_error: Exception | None = None
         for attempt in range(1, self.max_retry + 1):
+            response = None
             try:
                 response = requests.post(
                     self.endpoint_url,
                     json=payload,
                     headers=headers,
-                    stream=self.stream,
+                    stream=True,
                     timeout=300,
                 )
                 response.raise_for_status()
-                if self.stream:
-                    content, reasoning = parse_streaming_response(response)
-                    if self.is_reasoning_model and reasoning:
-                        print(f"[REASONING]\n{reasoning}")
-                    self.trace_logger.log(payload, {"content": content, "reasoning": reasoning or None}, metadata=metadata)
-                    return content, payload_messages, response
-                body = response.json()
-                self.trace_logger.log(payload, body, metadata=metadata)
-                message = body["choices"][0]["message"]
-                reasoning = message.get("reasoning_content") or message.get("reasoning")
+                content, reasoning = parse_streaming_response(response)
                 if self.is_reasoning_model and reasoning:
                     print(f"[REASONING]\n{reasoning}")
-                content = message.get("content")
-                if content is None:
-                    tool_calls = message.get("tool_calls") or []
-                    if tool_calls:
-                        content = "\n".join(json.dumps(call, ensure_ascii=False) for call in tool_calls)
-                    else:
-                        content = message.get("reasoning") or ""
-                return content, payload_messages, body
+                self.trace_logger.log(payload, {"content": content, "reasoning": reasoning or None}, metadata=metadata)
+                return content, payload_messages, response
             except Exception as exc:
                 last_error = exc
                 self.trace_logger.log(payload, None, metadata=metadata, error=exc)
                 print(f"[WARN] Qwen3.5 call failed on attempt {attempt}: {exc}")
-                if attempt < self.max_retry:
-                    time.sleep(wait_seconds)
+            finally:
+                if response is not None:
+                    response.close()
+            if attempt < self.max_retry:
+                time.sleep(wait_seconds)
 
         raise LLMInvokeError(
             f"LLM invoke failed after {self.max_retry} attempts for model '{self.model_name}' at '{self.endpoint_url}': {last_error}"
@@ -256,7 +253,6 @@ def create_llm_client(config_path: str = DEFAULT_MODEL_CONFIG_PATH, llm_trace_di
         endpoint_url=cfg["endpoint_url"],
         api_key=cfg["api_key"],
         model_name=cfg["model_name"],
-        stream=cfg["stream"],
         is_reasoning_model=cfg["is_reasoning_model"],
         llm_trace_dir=llm_trace_dir,
     )
