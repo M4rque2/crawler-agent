@@ -99,10 +99,6 @@ def load_model_config(config_path: str) -> dict[str, Any]:
         "endpoint_url": endpoint_url,
         "api_key": api_key,
         "model_name": model_name,
-        "top_p": float(raw.get("top_p", 0.7)),
-        "max_tokens": int(raw.get("max_tokens", 1024)),
-        "frequency_penalty": float(raw.get("frequency_penalty", 0)),
-        "presence_penalty": float(raw.get("presence_penalty", 0)),
         "stream": bool(raw.get("stream", False)),
         "is_reasoning_model": bool(raw.get("is_reasoning_model", False)),
     }
@@ -177,10 +173,6 @@ class OpenAICompatibleMultimodalClient:
         endpoint_url: str,
         api_key: str,
         model_name: str,
-        top_p: float = 0.7,
-        max_tokens: int = 1024,
-        frequency_penalty: float = 0,
-        presence_penalty: float = 0,
         stream: bool = True,
         max_retry: int = 3,
         llm_trace_dir: str | None = None,
@@ -189,10 +181,6 @@ class OpenAICompatibleMultimodalClient:
         self.endpoint_url = endpoint_url
         self.api_key = api_key
         self.model_name = model_name
-        self.top_p = top_p
-        self.max_tokens = max_tokens
-        self.frequency_penalty = frequency_penalty
-        self.presence_penalty = presence_penalty
         self.stream = stream
         self.max_retry = max_retry
         self.trace_logger = LlmTraceLogger(llm_trace_dir)
@@ -203,10 +191,6 @@ class OpenAICompatibleMultimodalClient:
         payload = {
             "model": self.model_name,
             "messages": payload_messages,
-            "top_p": self.top_p,
-            "frequency_penalty": self.frequency_penalty,
-            "presence_penalty": self.presence_penalty,
-            "max_tokens": self.max_tokens,
             "stream": self.stream,
         }
         headers = {
@@ -272,10 +256,6 @@ def create_llm_client(config_path: str = DEFAULT_MODEL_CONFIG_PATH, llm_trace_di
         endpoint_url=cfg["endpoint_url"],
         api_key=cfg["api_key"],
         model_name=cfg["model_name"],
-        top_p=cfg["top_p"],
-        max_tokens=cfg["max_tokens"],
-        frequency_penalty=cfg["frequency_penalty"],
-        presence_penalty=cfg["presence_penalty"],
         stream=cfg["stream"],
         is_reasoning_model=cfg["is_reasoning_model"],
         llm_trace_dir=llm_trace_dir,
