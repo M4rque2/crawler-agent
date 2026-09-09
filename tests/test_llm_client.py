@@ -137,3 +137,42 @@ class StreamingClientTests(unittest.TestCase):
                 self.config_path.write_text(json.dumps(config))
                 with self.assertRaisesRegex(SystemExit, "must be a JSON boolean"):
                     load_model_config(str(self.config_path))
+
+
+class ModelConfigValidationTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.path = Path(self.temp.name) / "model.json"
+        self.valid = {
+            "base_url": "https://example.invalid/v1",
+            "api_key": "secret-test-key",
+            "model_name": "test-model",
+        }
+
+    def test_missing_required_fields_have_clear_errors(self):
+        for key in self.valid:
+            with self.subTest(key=key):
+                config = dict(self.valid)
+                del config[key]
+                self.path.write_text(json.dumps(config))
+                with self.assertRaises(SystemExit) as caught:
+                    load_model_config(str(self.path))
+                self.assertEqual(str(caught.exception), f"Missing '{key}' in model config: {self.path}")
+
+    def test_invalid_required_values_are_not_coerced_to_strings(self):
+        for key in self.valid:
+            for value in (None, "", " \t\n", False, True, 0, 42, [], {}, {"secret": "secret-test-key"}):
+                with self.subTest(key=key, value=value):
+                    self.path.write_text(json.dumps(dict(self.valid, **{key: value})))
+                    with self.assertRaises(SystemExit) as caught:
+                        load_model_config(str(self.path))
+                    self.assertEqual(str(caught.exception),
+                                     f"'{key}' must be a non-empty JSON string in model config: {self.path}")
+                    self.assertNotIn("secret-test-key", str(caught.exception))
+
+    def test_valid_strings_are_trimmed_and_optional_thinking_stays_optional(self):
+        config = {key: f"  {value}  " for key, value in self.valid.items()}
+        config["base_url"] = "  https://example.invalid/v1/  "
+        self.path.write_text(json.dumps(config))
+        self.assertEqual(load_model_config(str(self.path)), self.valid)

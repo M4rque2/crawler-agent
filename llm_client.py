@@ -87,21 +87,19 @@ def load_model_config(config_path: str) -> dict[str, Any]:
     if not isinstance(raw, dict):
         raise SystemExit(f"Model config must be a JSON object: {path}")
 
-    base_url = str(raw.get("base_url") or "").strip().rstrip("/")
-    api_key = str(raw["api_key"]).strip()
-    model_name = str(raw["model_name"]).strip()
-    if not base_url:
-        raise SystemExit(f"Missing 'base_url' in model config: {path}")
-    if not api_key:
-        raise SystemExit(f"Missing 'api_key' in model config: {path}")
-    if not model_name:
-        raise SystemExit(f"Missing 'model_name' in model config: {path}")
-
-    config = {
-        "base_url": base_url,
-        "api_key": api_key,
-        "model_name": model_name,
-    }
+    config = {}
+    for key in ("base_url", "api_key", "model_name"):
+        if key not in raw:
+            raise SystemExit(f"Missing '{key}' in model config: {path}")
+        value = raw[key]
+        if not isinstance(value, str):
+            raise SystemExit(f"'{key}' must be a non-empty JSON string in model config: {path}")
+        value = value.strip()
+        if key == "base_url":
+            value = value.rstrip("/")
+        if not value:
+            raise SystemExit(f"'{key}' must be a non-empty JSON string in model config: {path}")
+        config[key] = value
     if "enable_thinking" in raw:
         if not isinstance(raw["enable_thinking"], bool):
             raise SystemExit("'enable_thinking' must be a JSON boolean (true or false), or omitted")
