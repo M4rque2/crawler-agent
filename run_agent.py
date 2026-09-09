@@ -5,6 +5,8 @@ Example:
     python run_agent.py --model-config model_config.json
 """
 
+from __future__ import annotations
+
 import argparse
 import copy
 import json

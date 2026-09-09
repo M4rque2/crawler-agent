@@ -4,6 +4,8 @@ This module converts model text output into predefined actions and executes
 those actions via ADB tools.
 """
 
+from __future__ import annotations
+
 import json
 import math
 import os

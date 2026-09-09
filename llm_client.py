@@ -1,5 +1,7 @@
 """LLM client and request/response helpers for OpenAI-compatible endpoints."""
 
+from __future__ import annotations
+
 import base64
 import json
 import time
@@ -85,18 +87,18 @@ def load_model_config(config_path: str) -> dict[str, Any]:
     if not isinstance(raw, dict):
         raise SystemExit(f"Model config must be a JSON object: {path}")
 
-    endpoint_url = str(raw["endpoint_url"]).strip()
+    base_url = str(raw.get("base_url") or "").strip().rstrip("/")
     api_key = str(raw["api_key"]).strip()
     model_name = str(raw["model_name"]).strip()
-    if not endpoint_url:
-        raise SystemExit(f"Missing 'endpoint_url' in model config: {path}")
+    if not base_url:
+        raise SystemExit(f"Missing 'base_url' in model config: {path}")
     if not api_key:
         raise SystemExit(f"Missing 'api_key' in model config: {path}")
     if not model_name:
         raise SystemExit(f"Missing 'model_name' in model config: {path}")
 
     config = {
-        "endpoint_url": endpoint_url,
+        "base_url": base_url,
         "api_key": api_key,
         "model_name": model_name,
     }
@@ -184,14 +186,14 @@ def parse_streaming_response(response: requests.Response) -> tuple[str, str]:
 class OpenAICompatibleMultimodalClient:
     def __init__(
         self,
-        endpoint_url: str,
+        base_url: str,
         api_key: str,
         model_name: str,
         max_retry: int = 3,
         llm_trace_dir: str | None = None,
         enable_thinking: bool | None = None,
     ):
-        self.endpoint_url = endpoint_url
+        self.base_url = base_url.strip().rstrip("/")
         self.api_key = api_key
         self.model_name = model_name
         self.max_retry = max_retry
@@ -199,6 +201,7 @@ class OpenAICompatibleMultimodalClient:
         self.enable_thinking = enable_thinking
 
     def invoke(self, messages: list[dict[str, Any]]) -> tuple[str, Any, Any]:
+        request_url = f"{self.base_url}/chat/completions"
         payload_messages = convert_messages_to_openai_image_url(messages)
         payload = {
             "model": self.model_name,
@@ -215,7 +218,7 @@ class OpenAICompatibleMultimodalClient:
         metadata = {
             "provider": "http-openai-compatible",
             "model": self.model_name,
-            "url": self.endpoint_url,
+            "url": request_url,
             "wrapper": self.__class__.__name__,
             "stream": True,
         }
@@ -226,7 +229,7 @@ class OpenAICompatibleMultimodalClient:
             response = None
             try:
                 response = requests.post(
-                    self.endpoint_url,
+                    request_url,
                     json=payload,
                     headers=headers,
                     stream=True,
@@ -247,14 +250,14 @@ class OpenAICompatibleMultimodalClient:
                 time.sleep(wait_seconds)
 
         raise LLMInvokeError(
-            f"LLM invoke failed after {self.max_retry} attempts for model '{self.model_name}' at '{self.endpoint_url}': {last_error}"
+            f"LLM invoke failed after {self.max_retry} attempts for model '{self.model_name}' at '{request_url}': {last_error}"
         )
 
 
 def create_llm_client(config_path: str = DEFAULT_MODEL_CONFIG_PATH, llm_trace_dir: str | None = None) -> OpenAICompatibleMultimodalClient:
     cfg = load_model_config(config_path)
     return OpenAICompatibleMultimodalClient(
-        endpoint_url=cfg["endpoint_url"],
+        base_url=cfg["base_url"],
         api_key=cfg["api_key"],
         model_name=cfg["model_name"],
         llm_trace_dir=llm_trace_dir,

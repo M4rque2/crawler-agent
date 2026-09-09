@@ -62,7 +62,7 @@ class StreamingClientTests(unittest.TestCase):
         self.config_path = Path(self.temp.name) / "model.json"
         # A legacy config must not turn streaming off.
         self.config_path.write_text(json.dumps({
-            "endpoint_url": "https://example.invalid/v1/chat/completions",
+            "base_url": "https://example.invalid/v1",
             "api_key": "test-key",
             "model_name": "test-model",
             "stream": False,
@@ -80,6 +80,7 @@ class StreamingClientTests(unittest.TestCase):
         self.assertEqual(content, "complete answer")
         self.assertEqual(post.call_count, 2)
         for call in post.call_args_list:
+            self.assertEqual(call.args[0], "https://example.invalid/v1/chat/completions")
             self.assertEqual(set(call.kwargs["json"]), {"model", "messages", "stream"})
             self.assertIs(call.kwargs["json"]["stream"], True)
             self.assertIs(call.kwargs["stream"], True)
@@ -96,6 +97,21 @@ class StreamingClientTests(unittest.TestCase):
             with self.assertRaises(LLMInvokeError):
                 self.client.invoke(self.messages)
         response.close.assert_called_once()
+
+    def test_base_url_preserves_gateway_path_and_handles_trailing_slash(self):
+        expected = "https://example.invalid/inference/qwen/model/v1/chat/completions"
+        for suffix in ("", "/"):
+            with self.subTest(suffix=suffix):
+                config = json.loads(self.config_path.read_text())
+                config["base_url"] = "https://example.invalid/inference/qwen/model/v1" + suffix
+                self.config_path.write_text(json.dumps(config))
+                client = create_llm_client(str(self.config_path), llm_trace_dir=self.temp.name)
+                response = response_with(content_event("answer") + "data: [DONE]\n\n")
+                with patch("llm_client.requests.post", return_value=response) as post:
+                    client.invoke(self.messages)
+                self.assertEqual(post.call_args.args[0], expected)
+                trace = json.loads(max(Path(self.temp.name).glob("llm_trace_*.json")).read_text())
+                self.assertEqual(trace["metadata"]["url"], expected)
 
     def test_explicit_thinking_switch_is_forwarded_and_traced(self):
         for enabled in (True, False):

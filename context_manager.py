@@ -1,5 +1,7 @@
 """Build per-turn LLM context for the GUI agent."""
 
+from __future__ import annotations
+
 import json
 import os
 import re

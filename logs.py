@@ -7,6 +7,8 @@ This module creates the per-task directory layout used by GUI-agent tasks:
 - llm-tracer/
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from pathlib import Path
 import io

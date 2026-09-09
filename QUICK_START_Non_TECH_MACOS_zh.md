@@ -412,7 +412,7 @@ open -e model_config.json
 
 ```json
 {
-  "endpoint_url": "把平台给你的 url 填在这里",
+  "base_url": "https://your-endpoint/v1",
   "api_key": "把平台给你的 api-key 填在这里",
   "model_name": "Qwen__Qwen3_5-397B-A17B"
 }
@@ -424,9 +424,9 @@ open -e model_config.json
 
 - 双引号 `"` 不要删。
 - 每一行末尾的逗号 `,` 不要乱删，也不要在最后一行多加逗号。
-- `endpoint_url`、`api_key`、`model_name` 都不能为空。
-- 如果平台给的 URL 已经包含 `/v1/chat/completions`，就完整照抄。
-- 如果平台只给了基础地址，需要按平台文档确认最终 chat completions 地址。
+- `base_url`、`api_key`、`model_name` 都不能为空。
+- `base_url` 填 API 基础地址，保留 `/v1` 和前面的网关路径；客户端会自动追加 `/chat/completions`，末尾有斜杠也可以。
+- 如果平台给的是完整地址，删除最后的 `/chat/completions`。旧配置需将 `endpoint_url` 改名为 `base_url`，并同样删除地址末尾的 `/chat/completions`。
 
 保存后，验证 JSON 格式是否正确：
 
@@ -800,16 +800,16 @@ python -m json.tool model_config.json
 - `api_key` 是否完整复制。
 - `model_name` 是否和平台展示完全一致。
 - 当前账号是否已经订阅 `Qwen3_5-397B-A17B`。
-- `endpoint_url` 是否填成了平台提供的完整接口地址。
+- `base_url` 是否填成了平台提供的 API 基础地址，并保留网关路径。
 
 ### 10.7 模型请求失败，日志里有 404
 
-通常是 `endpoint_url` 或 `model_name` 错了。
+通常是 `base_url` 或 `model_name` 错了。
 
 处理：
 
 - 回到 `lpai-llm.lixiang.com` 查看服务详情。
-- 确认 URL 是否需要包含 `/v1/chat/completions`。
+- 确认 `base_url` 保留了 `/v1` 和网关路径，且没有包含客户端自动追加的 `/chat/completions`。
 - 确认模型名大小写、下划线、横线是否完全一致。
 
 ### 10.8 模型一直乱点或没有按任务做
