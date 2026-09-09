@@ -2,6 +2,5 @@
   "_comment_usage": "Copy this file to model_config.json (remove the .example suffix) before running.",
   "endpoint_url": "https://your-endpoint/v1/chat/completions",
   "api_key": "YOUR_API_KEY",
-  "model_name": "YOUR_MODEL_NAME",
-  "is_reasoning_model": false
+  "model_name": "YOUR_MODEL_NAME"
 }

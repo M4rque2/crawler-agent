@@ -154,8 +154,7 @@ Edit `model_config.json`:
 {
   "endpoint_url": "https://your-endpoint/v1/chat/completions",
   "api_key": "YOUR_API_KEY",
-  "model_name": "YOUR_VISION_MODEL",
-  "is_reasoning_model": false
+  "model_name": "YOUR_VISION_MODEL"
 }
 ```
 

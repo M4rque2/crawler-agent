@@ -414,8 +414,7 @@ open -e model_config.json
 {
   "endpoint_url": "把平台给你的 url 填在这里",
   "api_key": "把平台给你的 api-key 填在这里",
-  "model_name": "Qwen__Qwen3_5-397B-A17B",
-  "is_reasoning_model": false
+  "model_name": "Qwen__Qwen3_5-397B-A17B"
 }
 ```
 

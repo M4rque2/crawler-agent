@@ -99,7 +99,6 @@ def load_model_config(config_path: str) -> dict[str, Any]:
         "endpoint_url": endpoint_url,
         "api_key": api_key,
         "model_name": model_name,
-        "is_reasoning_model": bool(raw.get("is_reasoning_model", False)),
     }
 
 
@@ -185,14 +184,12 @@ class OpenAICompatibleMultimodalClient:
         model_name: str,
         max_retry: int = 3,
         llm_trace_dir: str | None = None,
-        is_reasoning_model: bool = False,
     ):
         self.endpoint_url = endpoint_url
         self.api_key = api_key
         self.model_name = model_name
         self.max_retry = max_retry
         self.trace_logger = LlmTraceLogger(llm_trace_dir)
-        self.is_reasoning_model = is_reasoning_model
 
     def invoke(self, messages: list[dict[str, Any]]) -> tuple[str, Any, Any]:
         payload_messages = convert_messages_to_openai_image_url(messages)
@@ -228,8 +225,6 @@ class OpenAICompatibleMultimodalClient:
                 )
                 response.raise_for_status()
                 content, reasoning = parse_streaming_response(response)
-                if self.is_reasoning_model and reasoning:
-                    print(f"[REASONING]\n{reasoning}")
                 self.trace_logger.log(payload, {"content": content, "reasoning": reasoning or None}, metadata=metadata)
                 return content, payload_messages, response
             except Exception as exc:
@@ -253,6 +248,5 @@ def create_llm_client(config_path: str = DEFAULT_MODEL_CONFIG_PATH, llm_trace_di
         endpoint_url=cfg["endpoint_url"],
         api_key=cfg["api_key"],
         model_name=cfg["model_name"],
-        is_reasoning_model=cfg["is_reasoning_model"],
         llm_trace_dir=llm_trace_dir,
     )
