@@ -164,15 +164,19 @@ def build_messages(
         "</tool_call>"
     )
 
-    turn_text_parts = [{"text": turn_instruction}]
-    turn_text_parts.append({
-        "text": (
-            "Previous expectation:\n"
-            f"{previous_expectation or 'None. Use Expectation Check: unknown.'}"
-        )
-    })
-    if collection_memory:
-        turn_text_parts.append({"text": collection_memory})
+    def text_parts_for_turn(expectation):
+        parts = [
+            {"text": turn_instruction},
+            {"text": (
+                "Previous expectation:\n"
+                f"{expectation or 'None. Use Expectation Check: unknown.'}"
+            )},
+        ]
+        if collection_memory:
+            parts.append({"text": collection_memory})
+        return parts
+
+    turn_text_parts = text_parts_for_turn(previous_expectation)
 
     messages = [
         {
@@ -184,8 +188,9 @@ def build_messages(
     history_len = min(history_n, len(history_output))
     if history_len > 0:
         for idx, item in enumerate(history_output[-history_n:]):
+            historical_text_parts = text_parts_for_turn(item.get("previous_expectation"))
             if idx == 0:
-                first_turn_content = [*task_prompt_parts, *turn_text_parts]
+                first_turn_content = [*task_prompt_parts, *historical_text_parts]
                 first_turn_content.append({"image": "file://" + item["image"]})
                 messages.append({
                     "role": "user",
@@ -194,7 +199,7 @@ def build_messages(
             else:
                 messages.append({
                     "role": "user",
-                    "content": [*turn_text_parts, {"image": "file://" + item["image"]}],
+                    "content": [*historical_text_parts, {"image": "file://" + item["image"]}],
                 })
             messages.append({
                 "role": "assistant",

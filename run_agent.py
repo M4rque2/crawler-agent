@@ -155,6 +155,7 @@ def run_agent_loop(
             last_screenshot_path = current_screenshot_path
             feedback = None
 
+        turn_previous_expectation = last_expectation
         messages = build_messages(
             current_screenshot_path,
             system_prompt,
@@ -163,7 +164,7 @@ def run_agent_loop(
             history_n=history_n,
             feedback=feedback,
             collection_memory=build_collection_memory(output_jsonl_path),
-            previous_expectation=last_expectation,
+            previous_expectation=turn_previous_expectation,
         )
         try:
             output_text, _, _ = vlm.invoke(messages)
@@ -176,7 +177,8 @@ def run_agent_loop(
             response = parse_turn_response(output_text)
         except Exception as exc:
             print(f"[ERROR] Failed to parse model response: {exc}")
-            history.append({"output": output_text or "Malformed model response.", "image": current_screenshot_path})
+            history.append({"output": output_text or "Malformed model response.", "image": current_screenshot_path,
+                            "previous_expectation": turn_previous_expectation})
             continue
 
         history_output = format_turn_response(response)
@@ -195,7 +197,8 @@ def run_agent_loop(
             else:
                 pending_feedback = "[EXTRACT FEEDBACK] Extract failed: 'data' must be a non-empty JSON object. Retry the extract with a properly structured data field."
                 print(f"[EXTRACT ERROR] Invalid or empty data field.")
-            history.append({"output": history_output, "image": current_screenshot_path})
+            history.append({"output": history_output, "image": current_screenshot_path,
+                            "previous_expectation": turn_previous_expectation})
             continue
 
         if action_type == "terminate":
@@ -204,14 +207,16 @@ def run_agent_loop(
                 "Task completed" if status == "success" else "Task not completed; terminating"
             )
             print(f"[TERMINATE] {status}: {summary}")
-            history.append({"output": history_output, "image": current_screenshot_path})
+            history.append({"output": history_output, "image": current_screenshot_path,
+                            "previous_expectation": turn_previous_expectation})
             break
 
         if action_type == "interact":
             user_prompt = action_parameter.get("text", "the required action")
             input(f"[ACTION REQUIRED] Please complete: {user_prompt}\nPress Enter when done...")
             print("[INFO] User action completed. Resuming...")
-            history.append({"output": history_output, "image": current_screenshot_path})
+            history.append({"output": history_output, "image": current_screenshot_path,
+                            "previous_expectation": turn_previous_expectation})
             continue
 
         print(f"[ACTION RAW] {json.dumps(action_parameter, ensure_ascii=False)}")
@@ -220,7 +225,8 @@ def run_agent_loop(
             scaled_action_parameter = rescale_coordinates(action_parameter, width, height)
         except Exception as exc:
             print(f"[ERROR] Failed to rescale normalized action coordinates: {exc}")
-            history.append({"output": history_output, "image": current_screenshot_path})
+            history.append({"output": history_output, "image": current_screenshot_path,
+                            "previous_expectation": turn_previous_expectation})
             continue
         if scaled_action_parameter != action_parameter:
             print(
@@ -234,7 +240,8 @@ def run_agent_loop(
             adb_tools,
         )
 
-        history.append({"output": history_output, "image": current_screenshot_path})
+        history.append({"output": history_output, "image": current_screenshot_path,
+                        "previous_expectation": turn_previous_expectation})
         annotate_screenshot(
             current_screenshot_path,
             scaled_action_parameter,

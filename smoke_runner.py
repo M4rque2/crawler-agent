@@ -210,7 +210,7 @@ def load_scenario(scenario_path: str | Path) -> SmokeScenario:
 def _build_turn_messages(
     scenario: SmokeScenario,
     system_prompt: str,
-    history: list[dict[str, str]],
+    history: list[dict[str, Any]],
     previous_expectation: str | None,
 ) -> list[dict[str, Any]]:
     return build_messages(
@@ -287,7 +287,7 @@ def run_scenario(
     on_turn: Callable[[int, str], None] | None = None,
 ) -> dict[str, Any]:
     """Run one screenshot-only scenario against a supplied model client."""
-    history: list[dict[str, str]] = []
+    history: list[dict[str, Any]] = []
     previous_expectation: str | None = None
     actions: list[dict[str, Any]] = []
     previous_mechanism: str | None = None
@@ -327,11 +327,12 @@ def run_scenario(
             "arguments": arguments,
         }
         actions.append(action_record)
-        previous_expectation = response.get("expectation") or None
         history.append({
             "output": format_turn_response(response),
             "image": str(scenario.image_path),
+            "previous_expectation": previous_expectation,
         })
+        previous_expectation = response.get("expectation") or None
 
         if scenario.oracle["kind"] != "lag_back":
             passed, message = _check_single_turn(scenario, arguments)
