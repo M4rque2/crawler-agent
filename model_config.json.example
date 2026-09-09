@@ -1,5 +1,5 @@
 {
-  "_comment_usage": "Copy this file to model_config.json (remove the .example suffix) before running.",
+  "_comment_usage": "Copy this file to model_config.json before running. Optional: add enable_thinking as true or false for endpoints supporting chat_template_kwargs.enable_thinking; omit to use the server default.",
   "endpoint_url": "https://your-endpoint/v1/chat/completions",
   "api_key": "YOUR_API_KEY",
   "model_name": "YOUR_MODEL_NAME"

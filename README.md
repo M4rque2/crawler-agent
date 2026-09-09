@@ -160,6 +160,8 @@ Edit `model_config.json`:
 
 `model_config.json` is ignored by Git. Do not commit credentials or copy them into task prompts and traces.
 
+Optional: add `"enable_thinking": true` or `"enable_thinking": false` to control thinking on endpoints that support `chat_template_kwargs.enable_thinking` (such as the verified Qwen3.5 endpoint). Omit the field to use the endpoint's default; no thinking parameter is sent. The value must be a JSON boolean, not a string or `null`. Returned reasoning is saved in trace logs in either mode.
+
 ### 4. Run an included task
 
 Start with the XHS search example:

@@ -95,11 +95,16 @@ def load_model_config(config_path: str) -> dict[str, Any]:
     if not model_name:
         raise SystemExit(f"Missing 'model_name' in model config: {path}")
 
-    return {
+    config = {
         "endpoint_url": endpoint_url,
         "api_key": api_key,
         "model_name": model_name,
     }
+    if "enable_thinking" in raw:
+        if not isinstance(raw["enable_thinking"], bool):
+            raise SystemExit("'enable_thinking' must be a JSON boolean (true or false), or omitted")
+        config["enable_thinking"] = raw["enable_thinking"]
+    return config
 
 
 def pil_to_base64_png(image: Image.Image) -> str:
@@ -184,12 +189,14 @@ class OpenAICompatibleMultimodalClient:
         model_name: str,
         max_retry: int = 3,
         llm_trace_dir: str | None = None,
+        enable_thinking: bool | None = None,
     ):
         self.endpoint_url = endpoint_url
         self.api_key = api_key
         self.model_name = model_name
         self.max_retry = max_retry
         self.trace_logger = LlmTraceLogger(llm_trace_dir)
+        self.enable_thinking = enable_thinking
 
     def invoke(self, messages: list[dict[str, Any]]) -> tuple[str, Any, Any]:
         payload_messages = convert_messages_to_openai_image_url(messages)
@@ -198,6 +205,8 @@ class OpenAICompatibleMultimodalClient:
             "messages": payload_messages,
             "stream": True,
         }
+        if self.enable_thinking is not None:
+            payload["chat_template_kwargs"] = {"enable_thinking": self.enable_thinking}
         headers = {
             "accept": "text/event-stream",
             "content-type": "application/json",
@@ -249,4 +258,5 @@ def create_llm_client(config_path: str = DEFAULT_MODEL_CONFIG_PATH, llm_trace_di
         api_key=cfg["api_key"],
         model_name=cfg["model_name"],
         llm_trace_dir=llm_trace_dir,
+        enable_thinking=cfg.get("enable_thinking"),
     )

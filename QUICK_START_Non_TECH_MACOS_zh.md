@@ -418,6 +418,8 @@ open -e model_config.json
 }
 ```
 
+可选：如果接口支持 `chat_template_kwargs.enable_thinking`（已验证的 Qwen3.5 接口支持），可以在配置中添加 `"enable_thinking": true` 开启思考，或 `"enable_thinking": false` 关闭思考。不写这个字段时使用服务端默认设置，客户端不会发送思考开关。值必须是 JSON 布尔值，不能加引号，也不能写 `null`。服务端返回的思考内容仍会保存到追踪日志中。
+
 编辑时特别注意：
 
 - 双引号 `"` 不要删。

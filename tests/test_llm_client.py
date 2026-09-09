@@ -96,3 +96,28 @@ class StreamingClientTests(unittest.TestCase):
             with self.assertRaises(LLMInvokeError):
                 self.client.invoke(self.messages)
         response.close.assert_called_once()
+
+    def test_explicit_thinking_switch_is_forwarded_and_traced(self):
+        for enabled in (True, False):
+            with self.subTest(enabled=enabled):
+                config = json.loads(self.config_path.read_text())
+                config["enable_thinking"] = enabled
+                self.config_path.write_text(json.dumps(config))
+                client = create_llm_client(str(self.config_path), llm_trace_dir=self.temp.name)
+                response = response_with(content_event("answer") + "data: [DONE]\n\n")
+                with patch("llm_client.requests.post", return_value=response) as post:
+                    client.invoke(self.messages)
+                self.assertEqual(post.call_args.kwargs["json"]["chat_template_kwargs"],
+                                 {"enable_thinking": enabled})
+                trace_path = max(Path(self.temp.name).glob("llm_trace_*.json"))
+                trace = json.loads(trace_path.read_text())
+                self.assertIs(trace["request"]["chat_template_kwargs"]["enable_thinking"], enabled)
+
+    def test_invalid_thinking_switch_is_rejected(self):
+        for value in ("false", "true", 0, 1, None, [], {}):
+            with self.subTest(value=value):
+                config = json.loads(self.config_path.read_text())
+                config["enable_thinking"] = value
+                self.config_path.write_text(json.dumps(config))
+                with self.assertRaisesRegex(SystemExit, "must be a JSON boolean"):
+                    load_model_config(str(self.config_path))
